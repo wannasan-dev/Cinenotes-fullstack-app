@@ -1,0 +1,21 @@
+# Java / Spring Boot
+cinenotes-backend/target/
+*.class
+
+# Node / React
+cinenotes-frontend/node_modules/
+cinenotes-frontend/dist/
+
+# Environment / secrets
+*.env
+application-local.properties
+
+# IDE / OS
+.DS_Store
+.metadata/
+.idea/
+.vscode/
+*.iml
+
+# Logs
+*.log
