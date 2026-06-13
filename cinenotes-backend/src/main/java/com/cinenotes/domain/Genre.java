@@ -11,6 +11,8 @@ public enum Genre {
 	 MYSTERY,
 
 	 ACTION,
+	 
+	 CHRIME,
 
 	 SCI_FI,
 

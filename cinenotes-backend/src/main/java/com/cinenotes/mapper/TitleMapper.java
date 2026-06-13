@@ -14,12 +14,12 @@ public class TitleMapper {
 
         title.setType(request.getType());
         title.setName(request.getName());
-        title.setGenre(request.getGenre());
+        title.setGenres(request.getGenres());
         title.setRating(request.getRating());
         title.setDescription(request.getDescription());
         title.setReleaseYear(request.getReleaseYear());
         title.setPosterUrl(request.getPosterUrl());
-        title.setRecommendationText(request.getRecommendationText());
+        title.setReviewText(request.getReviewText());
 
         return title;
     }
@@ -29,12 +29,12 @@ public class TitleMapper {
                 title.getId(),
                 title.getType(),
                 title.getName(),
-                title.getGenre(),
+                title.getGenres(),
                 title.getRating(),
                 title.getDescription(),
                 title.getReleaseYear(),
                 title.getPosterUrl(),
-                title.getRecommendationText(),
+                title.getReviewText(),
                 title.getCreatedAt(),
                 title.getUpdatedAt()
         );
@@ -43,11 +43,11 @@ public class TitleMapper {
     public void updateEntity(Title title, TitleRequest request) {
         title.setType(request.getType());
         title.setName(request.getName());
-        title.setGenre(request.getGenre());
+        title.setGenres(request.getGenres());
         title.setRating(request.getRating());
         title.setDescription(request.getDescription());
         title.setReleaseYear(request.getReleaseYear());
         title.setPosterUrl(request.getPosterUrl());
-        title.setRecommendationText(request.getRecommendationText());
+        title.setReviewText(request.getReviewText());
     }
 }

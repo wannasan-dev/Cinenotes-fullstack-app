@@ -1,23 +1,23 @@
 package com.cinenotes.domain;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.DecimalMax;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -39,9 +39,12 @@ public class Title {
 	@Setter
     private String name;
     
+	@ElementCollection
+	@Enumerated(EnumType.STRING)
+	@CollectionTable(name = "title_genres", joinColumns = @JoinColumn(name = "title_id"))
+	@Column(name = "genre")
 	@Setter
-    @Enumerated(EnumType.STRING)
-    private Genre genre;
+	private Set<Genre> genres = new HashSet<>();
     
 	@Setter
     private Double rating;
@@ -58,7 +61,7 @@ public class Title {
 
 	@Setter
     @Column(columnDefinition = "TEXT")
-    private String recommendationText;
+    private String reviewText;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -71,20 +74,20 @@ public class Title {
     public Title(
             TitleType type,
             String name,
-            Genre genre,
+            Set<Genre> genres,
             Double rating,
             String description,
             Integer releaseYear,
             String posterUrl,
-            String recommendationText
+            String reviewText
     ) {
         this.type = type;
         this.name = name;
-        this.genre = genre;
+        this.genres = genres;
         this.rating = rating;
         this.description = description;
         this.releaseYear = releaseYear;
         this.posterUrl = posterUrl;
-        this.recommendationText = recommendationText;
+        this.reviewText = reviewText;
     }
 }

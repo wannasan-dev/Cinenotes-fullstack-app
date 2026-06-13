@@ -1,5 +1,7 @@
 package com.cinenotes.dto;
 
+import java.util.Set;
+
 import com.cinenotes.domain.Genre;
 import com.cinenotes.domain.TitleType;
 
@@ -8,6 +10,7 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -27,8 +30,8 @@ public class TitleRequest {
 	@NotBlank(message = "name is required")
     private String name;
 	
-	@NotNull(message = "genre is required")
-	private Genre genre;
+	@NotEmpty(message = "At least one genre is required")
+	private Set<Genre> genres;
 
 	@NotNull(message = "rating is required")
     @DecimalMin(value = "0.0", message = "rating must be at least 0")
@@ -47,6 +50,7 @@ public class TitleRequest {
 	@NotBlank(message = "posterUrl is required")
     private String posterUrl;
 	
-	@NotBlank(message = "recommendationText is required")
-	private String recommendationText;
+	@NotBlank(message = "Review text is required")
+	@Size(max = 5000, message = "Review text must be less than 5000 characters")
+	private String reviewText;
 }

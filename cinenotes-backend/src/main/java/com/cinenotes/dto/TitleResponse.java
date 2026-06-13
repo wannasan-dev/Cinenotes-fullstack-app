@@ -1,6 +1,7 @@
 package com.cinenotes.dto;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 import com.cinenotes.domain.Genre;
 import com.cinenotes.domain.TitleType;
@@ -22,7 +23,7 @@ public class TitleResponse {
 
     private String name;
 
-    private Genre genre;
+    private Set<Genre> genres;
 
     private Double rating;
 
@@ -32,7 +33,7 @@ public class TitleResponse {
 
     private String posterUrl;
 
-    private String recommendationText;
+    private String reviewText;
 
     private LocalDateTime createdAt;
 
