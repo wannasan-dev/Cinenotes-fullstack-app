@@ -350,12 +350,27 @@ body {
   cursor: pointer;
 }
 
+.sort-select {
+  padding: 14px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(24, 24, 27, 0.85);
+  color: #f8fafc;
+  font-size: 15px;
+  outline: none;
+  cursor: pointer;
+}
+
 .search-input::placeholder {
   color: #64748b;
 }
 
 .search-input:focus,
 .genre-select:focus {
+  border-color: rgba(168, 85, 247, 0.8);
+  box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.12);
+}
+.sort-select:focus {
   border-color: rgba(168, 85, 247, 0.8);
   box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.12);
 }

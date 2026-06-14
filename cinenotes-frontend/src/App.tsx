@@ -12,6 +12,7 @@ function App() {
   const [searchText, setSearchText] = useState("");
   const [selectedGenre, setSelectedGenre] = useState("ALL");
   const [selectedTitle, setSelectedTitle] = useState<Title | null>(null);
+  const [sortOption, setSortOption] = useState("LATEST");
 
   useEffect(() => {
     async function loadTitles() {
@@ -44,6 +45,15 @@ function App() {
 
     return matchesType && matchesSearch && matchesGenre;
   });
+
+  const sortedTitles = [...filteredTitles];
+  if (sortOption === "RATING") {
+    sortedTitles.sort((a, b) => b.rating - a.rating);
+  } else if (sortOption === "YEAR") {
+    sortedTitles.sort((a, b) => b.releaseYear - a.releaseYear);
+  } else if (sortOption === "LATEST") {
+    sortedTitles.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
 
   if (loading) {
     return <p className="status-message">Loading titles...</p>;
@@ -108,23 +118,33 @@ function App() {
             </option>
           ))}
         </select>
+
+        <select
+          className="sort-select"
+          value={sortOption}
+          onChange={(event) => setSortOption(event.target.value)}
+        >
+          <option value="LATEST">Latest added</option>
+          <option value="YEAR">Newest released</option>
+          <option value="RATING">Highest rated</option>
+        </select>
       </section>
 
       <section className="section-header">
         <div>
           <h2>Latest recommendations</h2>
-          <p>{filteredTitles.length} titles</p>
+          <p>{sortedTitles.length} titles</p>
         </div>
       </section>
 
-      {filteredTitles.length === 0 ? (
+      {sortedTitles.length === 0 ? (
       <div className="empty-state">
         <h3>No titles found</h3>
         <p>Try changing the search keyword.</p>
       </div>
       ) : (
       <section className="title-grid">
-        {filteredTitles.map((title) => (
+        {sortedTitles.map((title) => (
           <TitleCard
             key={title.id}
             title={title}
