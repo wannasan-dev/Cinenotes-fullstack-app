@@ -13,3 +13,15 @@ export type Title = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type LoginRequest = {
+  username: string;
+  password: string;
+};
+
+export type LoginResponse = {
+  token: string;
+  username: string;
+  role: "ADMIN";
+  message: string;
+};
