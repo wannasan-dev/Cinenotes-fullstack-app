@@ -9,6 +9,7 @@ cinenotes-frontend/dist/
 # Environment / secrets
 *.env
 application-local.properties
+cinenotes-backend/src/main/resources/application-local.properties
 
 # IDE / OS
 .DS_Store
