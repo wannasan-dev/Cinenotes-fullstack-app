@@ -12,14 +12,18 @@ public class TitleMapper {
     public Title toEntity(TitleRequest request) {
         Title title = new Title();
 
+        title.setTmdbId(request.getTmdbId());
         title.setType(request.getType());
         title.setName(request.getName());
-        title.setGenres(request.getGenres());
-        title.setRating(request.getRating());
-        title.setDescription(request.getDescription());
-        title.setReleaseYear(request.getReleaseYear());
-        title.setPosterUrl(request.getPosterUrl());
-        title.setReviewText(request.getReviewText());
+        title.setOriginalName(request.getOriginalName());
+        title.setOverview(request.getOverview());
+        title.setPosterPath(request.getPosterPath());
+        title.setBackdropPath(request.getBackdropPath());
+        title.setReleaseDate(request.getReleaseDate());
+        title.setRuntime(request.getRuntime());
+        title.setOriginalLanguage(request.getOriginalLanguage());
+        title.setTmdbVoteAverage(request.getTmdbVoteAverage());
+        title.setTmdbVoteCount(request.getTmdbVoteCount());
 
         return title;
     }
@@ -27,27 +31,35 @@ public class TitleMapper {
     public TitleResponse toResponse(Title title) {
         return new TitleResponse(
                 title.getId(),
+                title.getTmdbId(),
                 title.getType(),
                 title.getName(),
-                title.getGenres(),
-                title.getRating(),
-                title.getDescription(),
-                title.getReleaseYear(),
-                title.getPosterUrl(),
-                title.getReviewText(),
+                title.getOriginalName(),
+                title.getOverview(),
+                title.getPosterPath(),
+                title.getBackdropPath(),
+                title.getReleaseDate(),
+                title.getRuntime(),
+                title.getOriginalLanguage(),
+                title.getTmdbVoteAverage(),
+                title.getTmdbVoteCount(),
                 title.getCreatedAt(),
                 title.getUpdatedAt()
         );
     }
 
     public void updateEntity(Title title, TitleRequest request) {
+        title.setTmdbId(request.getTmdbId());
         title.setType(request.getType());
         title.setName(request.getName());
-        title.setGenres(request.getGenres());
-        title.setRating(request.getRating());
-        title.setDescription(request.getDescription());
-        title.setReleaseYear(request.getReleaseYear());
-        title.setPosterUrl(request.getPosterUrl());
-        title.setReviewText(request.getReviewText());
+        title.setOriginalName(request.getOriginalName());
+        title.setOverview(request.getOverview());
+        title.setPosterPath(request.getPosterPath());
+        title.setBackdropPath(request.getBackdropPath());
+        title.setReleaseDate(request.getReleaseDate());
+        title.setRuntime(request.getRuntime());
+        title.setOriginalLanguage(request.getOriginalLanguage());
+        title.setTmdbVoteAverage(request.getTmdbVoteAverage());
+        title.setTmdbVoteCount(request.getTmdbVoteCount());
     }
 }

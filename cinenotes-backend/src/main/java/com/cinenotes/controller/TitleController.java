@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.cinenotes.domain.Genre;
 import com.cinenotes.domain.TitleType;
 import com.cinenotes.dto.TitleRequest;
 import com.cinenotes.dto.TitleResponse;
@@ -36,7 +35,7 @@ public class TitleController {
     @GetMapping
     public ResponseEntity<List<TitleResponse>> findAll(
             @RequestParam(required = false) TitleType type,
-            @RequestParam(required = false) Genre genre,
+            @RequestParam(required = false) String genre,
             @RequestParam(required = false) String keyword
     ) {
         return ResponseEntity.ok(titleService.findAll(type, genre, keyword));

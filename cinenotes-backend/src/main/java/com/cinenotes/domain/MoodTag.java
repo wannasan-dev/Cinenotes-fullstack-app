@@ -19,24 +19,26 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "genres")
+@Table(name = "mood_tags")
 @Getter
 @Setter
 @NoArgsConstructor
-public class Genre {
+public class MoodTag {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "tmdb_genre_id", unique = true)
-    private Integer tmdbGenreId;
-
     @Column(nullable = false, unique = true)
     private String name;
 
-    @OneToMany(mappedBy = "genre")
-    private Set<TitleGenre> titleGenres = new HashSet<>();
+    private String description;
+
+    @OneToMany(mappedBy = "moodTag")
+    private Set<TitleMoodTag> titleMoodTags = new HashSet<>();
+
+    @OneToMany(mappedBy = "moodTag")
+    private Set<WatchLogMood> watchLogMoods = new HashSet<>();
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

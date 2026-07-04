@@ -24,6 +24,7 @@ public class DataSeeder {
             if (!adminExists) {
                 AppUser admin = new AppUser();
                 admin.setUsername("admin");
+                admin.setEmail("admin@cinenotes.local");
                 admin.setPassword(passwordEncoder.encode("admin123"));
                 admin.setRole(AppRole.ADMIN);
 

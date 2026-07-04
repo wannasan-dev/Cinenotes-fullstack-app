@@ -1,0 +1,18 @@
+package com.cinenotes.domain;
+
+public enum AuditAction {
+    LOGIN,
+    REGISTER,
+    TITLE_IMPORTED,
+    TITLE_CREATED,
+    TITLE_UPDATED,
+    TITLE_DELETED,
+    REVIEW_CREATED,
+    REVIEW_UPDATED,
+    REVIEW_DELETED,
+    REVIEW_MODERATED,
+    WATCHLIST_UPDATED,
+    WATCH_LOG_CREATED,
+    MOOD_TAG_CREATED,
+    USER_DEACTIVATED
+}

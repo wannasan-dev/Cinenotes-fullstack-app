@@ -1,5 +1,6 @@
 package com.cinenotes.domain;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -7,61 +8,87 @@ import java.util.Set;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "titles")
+@Table(
+        name = "titles",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_titles_tmdb_id_type",
+                columnNames = {"tmdb_id", "type"}
+        )
+)
 @Getter
+@Setter
 @NoArgsConstructor
 public class Title {
 
-	@Id
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
-	@Setter
-    @Enumerated(EnumType.STRING)
-    private TitleType type;
-    
-	@Setter
-    private String name;
-    
-	@ElementCollection
-	@Enumerated(EnumType.STRING)
-	@CollectionTable(name = "title_genres", joinColumns = @JoinColumn(name = "title_id"))
-	@Column(name = "genre")
-	@Setter
-	private Set<Genre> genres = new HashSet<>();
-    
-	@Setter
-    private Double rating;
-    
-	@Setter
-    private String description;
-    
-	@Setter
-    private Integer releaseYear;
-    
-	@Setter
-    @Column(length = 1000)
-    private String posterUrl;
 
-	@Setter
+    @Column(name = "tmdb_id")
+    private Long tmdbId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TitleType type;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Column(name = "original_name")
+    private String originalName;
+
     @Column(columnDefinition = "TEXT")
-    private String reviewText;
+    private String overview;
+
+    @Column(name = "poster_path")
+    private String posterPath;
+
+    @Column(name = "backdrop_path")
+    private String backdropPath;
+
+    @Column(name = "release_date")
+    private LocalDate releaseDate;
+
+    private Integer runtime;
+
+    @Column(name = "original_language")
+    private String originalLanguage;
+
+    @Column(name = "tmdb_vote_average")
+    private Double tmdbVoteAverage;
+
+    @Column(name = "tmdb_vote_count")
+    private Integer tmdbVoteCount;
+
+    @OneToMany(mappedBy = "title")
+    private Set<TitleGenre> titleGenres = new HashSet<>();
+
+    @OneToMany(mappedBy = "title")
+    private Set<TitleMoodTag> titleMoodTags = new HashSet<>();
+
+    @OneToMany(mappedBy = "title")
+    private Set<Review> reviews = new HashSet<>();
+
+    @OneToMany(mappedBy = "title")
+    private Set<WatchlistItem> watchlistItems = new HashSet<>();
+
+    @OneToMany(mappedBy = "title")
+    private Set<WatchLog> watchLogs = new HashSet<>();
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -70,24 +97,4 @@ public class Title {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
-    
-    public Title(
-            TitleType type,
-            String name,
-            Set<Genre> genres,
-            Double rating,
-            String description,
-            Integer releaseYear,
-            String posterUrl,
-            String reviewText
-    ) {
-        this.type = type;
-        this.name = name;
-        this.genres = genres;
-        this.rating = rating;
-        this.description = description;
-        this.releaseYear = releaseYear;
-        this.posterUrl = posterUrl;
-        this.reviewText = reviewText;
-    }
 }

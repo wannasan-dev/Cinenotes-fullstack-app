@@ -1,9 +1,8 @@
 package com.cinenotes.dto;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Set;
 
-import com.cinenotes.domain.Genre;
 import com.cinenotes.domain.TitleType;
 
 import lombok.AllArgsConstructor;
@@ -19,21 +18,29 @@ public class TitleResponse {
 
     private Long id;
 
+    private Long tmdbId;
+
     private TitleType type;
 
     private String name;
 
-    private Set<Genre> genres;
+    private String originalName;
 
-    private Double rating;
+    private String overview;
 
-    private String description;
+    private String posterPath;
 
-    private Integer releaseYear;
+    private String backdropPath;
 
-    private String posterUrl;
+    private LocalDate releaseDate;
 
-    private String reviewText;
+    private Integer runtime;
+
+    private String originalLanguage;
+
+    private Double tmdbVoteAverage;
+
+    private Integer tmdbVoteCount;
 
     private LocalDateTime createdAt;
 

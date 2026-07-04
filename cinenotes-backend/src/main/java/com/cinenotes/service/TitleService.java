@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.cinenotes.domain.Genre;
 import com.cinenotes.domain.Title;
 import com.cinenotes.domain.TitleType;
 import com.cinenotes.dto.TitleRequest;
@@ -62,7 +61,7 @@ public class TitleService {
         titleRepository.deleteById(id);
     }
     
-    public List<TitleResponse> findAll(TitleType type, Genre genre, String keyword) {
+    public List<TitleResponse> findAll(TitleType type, String genre, String keyword) {
         return titleRepository.findAllWithFilters(type, genre, keyword)
                 .stream()
                 .map(titleMapper::toResponse)

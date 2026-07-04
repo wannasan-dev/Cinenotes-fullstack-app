@@ -1,18 +1,13 @@
 package com.cinenotes.dto;
 
-import java.util.Set;
+import java.time.LocalDate;
 
-import com.cinenotes.domain.Genre;
 import com.cinenotes.domain.TitleType;
 
-import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,33 +19,32 @@ import lombok.Setter;
 @AllArgsConstructor
 public class TitleRequest {
 
-	@NotNull(message = "type is required")
-	private TitleType type;
-	
-	@NotBlank(message = "name is required")
+    private Long tmdbId;
+
+    @NotNull(message = "type is required")
+    private TitleType type;
+
+    @NotBlank(message = "name is required")
     private String name;
-	
-	@NotEmpty(message = "At least one genre is required")
-	private Set<Genre> genres;
 
-	@NotNull(message = "rating is required")
-    @DecimalMin(value = "0.0", message = "rating must be at least 0")
-    @DecimalMax(value = "10.0", message = "rating must be at most 10")
-    private Double rating;
-	
-	@NotBlank(message = "description is required")
-	@Size(max = 200, message = "description must be <= 200 characters")
-	private String description;
+    private String originalName;
 
-	@NotNull(message = "releaseYear is required")
-	@Min(value = 1888, message = "releaseYear must be realistic")
-	@Max(value = 2100, message = "releaseYear must be realistic")
-    private Integer releaseYear;
-	
-	@NotBlank(message = "posterUrl is required")
-    private String posterUrl;
-	
-	@NotBlank(message = "Review text is required")
-	@Size(max = 5000, message = "Review text must be less than 5000 characters")
-	private String reviewText;
+    private String overview;
+
+    private String posterPath;
+
+    private String backdropPath;
+
+    private LocalDate releaseDate;
+
+    @Min(value = 1, message = "runtime must be positive")
+    private Integer runtime;
+
+    private String originalLanguage;
+
+    @DecimalMin(value = "0.0", message = "tmdbVoteAverage must be at least 0")
+    private Double tmdbVoteAverage;
+
+    @Min(value = 0, message = "tmdbVoteCount must be at least 0")
+    private Integer tmdbVoteCount;
 }
