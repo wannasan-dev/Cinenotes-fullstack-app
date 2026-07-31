@@ -64,10 +64,13 @@ public class Title {
     @Column(name = "release_date")
     private LocalDate releaseDate;
 
-    private Integer runtime;
+    @Column(name = "runtime_minutes")
+    private Integer runtimeMinutes;
 
     @Column(name = "original_language")
     private String originalLanguage;
+
+    private String country;
 
     @Column(name = "tmdb_vote_average")
     private Double tmdbVoteAverage;

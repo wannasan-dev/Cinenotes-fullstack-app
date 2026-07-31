@@ -36,7 +36,8 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
 
-        AppUser user = appUserRepository.findByUsername(request.getUsername())
+        AppUser user = appUserRepository.findByUsername(request.getUsernameOrEmail())
+                .or(() -> appUserRepository.findByEmail(request.getUsernameOrEmail()))
                 .orElse(null);
 
         if (user == null) {

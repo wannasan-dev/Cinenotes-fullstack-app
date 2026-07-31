@@ -51,6 +51,7 @@ public class Review {
     @Column(name = "review_text", columnDefinition = "TEXT")
     private String reviewText;
 
+    @Column(name = "review_language")
     private String language;
 
     @Column(name = "contains_spoiler", nullable = false)

@@ -2,6 +2,7 @@ package com.cinenotes.dto;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.cinenotes.domain.TitleType;
 
@@ -30,17 +31,23 @@ public class TitleResponse {
 
     private String posterPath;
 
-    private String backdropPath;
-
     private LocalDate releaseDate;
 
-    private Integer runtime;
+    private Integer runtimeMinutes;
 
     private String originalLanguage;
+
+    private String country;
 
     private Double tmdbVoteAverage;
 
     private Integer tmdbVoteCount;
+
+    private String backdropPath;
+
+    private List<GenreResponse> genres;
+
+    private List<MoodTagResponse> moodTags;
 
     private LocalDateTime createdAt;
 
