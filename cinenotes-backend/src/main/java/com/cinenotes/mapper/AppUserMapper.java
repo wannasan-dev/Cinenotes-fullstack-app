@@ -64,9 +64,20 @@ public class AppUserMapper {
             return;
         }
 
-        user.setDisplayName(request.displayName());
-        user.setBio(request.bio());
-        user.setProfileImage(request.profileImage());
-        user.setPreferredLanguage(request.preferredLanguage());
+        if (request.displayName() != null) {
+            user.setDisplayName(request.displayName());
+        }
+
+        if (request.bio() != null) {
+            user.setBio(request.bio());
+        }
+
+        if (request.profileImage() != null) {
+            user.setProfileImage(request.profileImage());
+        }
+
+        if (request.preferredLanguage() != null) {
+            user.setPreferredLanguage(request.preferredLanguage());
+        }
     }
 }
