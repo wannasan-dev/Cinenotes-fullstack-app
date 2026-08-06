@@ -12,5 +12,7 @@ public interface WatchLogRepository extends JpaRepository<WatchLog, Long> {
 
     List<WatchLog> findByUserIdAndTitleId(Long userId, Long titleId);
 
+    List<WatchLog> findByUserIdAndTitleIdOrderByWatchedDateDesc(Long userId, Long titleId);
+
     List<WatchLog> findByUserIdOrderByWatchedDateDesc(Long userId);
 }

@@ -59,11 +59,25 @@ public class WatchLogMapper {
             return;
         }
 
-        watchLog.setWatchedDate(request.watchedDate());
-        watchLog.setWatchPlace(request.watchPlace());
-        watchLog.setWatchCompany(request.watchCompany());
-        watchLog.setIsRewatch(Boolean.TRUE.equals(request.rewatch()));
-        watchLog.setMemoryNote(request.memoryNote());
+        if (request.watchedDate() != null) {
+            watchLog.setWatchedDate(request.watchedDate());
+        }
+
+        if (request.watchPlace() != null) {
+            watchLog.setWatchPlace(request.watchPlace());
+        }
+
+        if (request.watchCompany() != null) {
+            watchLog.setWatchCompany(request.watchCompany());
+        }
+
+        if (request.rewatch() != null) {
+            watchLog.setIsRewatch(request.rewatch());
+        }
+
+        if (request.memoryNote() != null) {
+            watchLog.setMemoryNote(request.memoryNote());
+        }
     }
 
     private List<MoodTagResponse> toMoodResponses(WatchLog watchLog) {

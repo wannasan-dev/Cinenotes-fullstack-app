@@ -45,7 +45,12 @@ public class WatchlistItemMapper {
             return;
         }
 
-        item.setStatus(request.status());
-        item.setIsFavorite(Boolean.TRUE.equals(request.favorite()));
+        if (request.status() != null) {
+            item.setStatus(request.status());
+        }
+
+        if (request.favorite() != null) {
+            item.setIsFavorite(request.favorite());
+        }
     }
 }
