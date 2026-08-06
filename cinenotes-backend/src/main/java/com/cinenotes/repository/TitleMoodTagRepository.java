@@ -16,4 +16,8 @@ public interface TitleMoodTagRepository extends JpaRepository<TitleMoodTag, Long
     Optional<TitleMoodTag> findByTitleIdAndMoodTagId(Long titleId, Long moodTagId);
 
     boolean existsByTitleIdAndMoodTagId(Long titleId, Long moodTagId);
+
+    boolean existsByMoodTagId(Long moodTagId);
+
+    void deleteByTitleId(Long titleId);
 }

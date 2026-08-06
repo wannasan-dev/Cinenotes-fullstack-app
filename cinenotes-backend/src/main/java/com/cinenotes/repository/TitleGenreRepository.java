@@ -16,4 +16,8 @@ public interface TitleGenreRepository extends JpaRepository<TitleGenre, Long> {
     Optional<TitleGenre> findByTitleIdAndGenreId(Long titleId, Long genreId);
 
     boolean existsByTitleIdAndGenreId(Long titleId, Long genreId);
+
+    boolean existsByGenreId(Long genreId);
+
+    void deleteByTitleId(Long titleId);
 }

@@ -10,7 +10,11 @@ public interface GenreRepository extends JpaRepository<Genre, Long> {
 
     Optional<Genre> findByName(String name);
 
+    Optional<Genre> findByNameIgnoreCase(String name);
+
     boolean existsByName(String name);
+
+    boolean existsByNameIgnoreCase(String name);
 
     Optional<Genre> findByTmdbGenreId(Integer tmdbGenreId);
 }
