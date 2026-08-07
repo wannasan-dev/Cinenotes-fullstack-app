@@ -3,7 +3,7 @@ import "./App.css";
 import { deleteTitle, fetchTitles } from "./api/titleApi";
 import { TitleCard } from "./components/TitleCard";
 import type { Title } from "./types/title";
-import { ReviewModal } from "./components/ReviewModal";
+import { TitleDetailModal } from "./components/TitleDetailModal";
 import { SearchControls } from "./components/SearchControls";
 import { TypeFilterBar } from "./components/TypeFilterBar";
 import { filterAndSortTitles } from "./utils/TitleUtils";
@@ -15,15 +15,17 @@ import {
   storeAuth,
 } from "./auth/authStorage";
 import type { AuthResponse, AuthState } from "./types/auth";
+import type { TitleType } from "./types/title";
 
 function App() {
   const [titles, setTitles] = useState<Title[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedType, setSelectedType] =
-    useState<"ALL" | "MOVIE" | "SERIES">("ALL");
+    useState<"ALL" | TitleType>("ALL");
   const [searchText, setSearchText] = useState("");
   const [selectedGenre, setSelectedGenre] = useState("ALL");
+  const [selectedMood, setSelectedMood] = useState("ALL");
   const [selectedTitle, setSelectedTitle] = useState<Title | null>(null);
   const [sortOption, setSortOption] = useState("LATEST");
   const [editingTitle, setEditingTitle] = useState<Title | null>(null);
@@ -37,8 +39,14 @@ function App() {
   useEffect(() => {  
     async function loadTitles() {
       try { 
-        const data = await fetchTitles();
+        setLoading(true);
+        const data = await fetchTitles({
+          type: selectedType === "ALL" ? undefined : selectedType,
+          genre: selectedGenre === "ALL" ? undefined : selectedGenre,
+          keyword: searchText.trim() === "" ? undefined : searchText.trim(),
+        });
         setTitles(data);
+        setError("");
       } catch {
         setError("Could not load titles.");
       } finally {
@@ -46,7 +54,7 @@ function App() {
       }
     }
     loadTitles();
-  }, []);
+  }, [selectedGenre, searchText, selectedType]);
 
 
   async function handleDeleteTitle(titleToDelete: Title) {
@@ -89,12 +97,18 @@ function App() {
     setIsFormOpen(false);
   }
 
-  const genres = Array.from(new Set(titles.flatMap((title) => title.genres)));
+  const genres = Array.from(
+    new Set(titles.flatMap((title) => title.genres.map((genre) => genre.name)))
+  );
+  const moods = Array.from(
+    new Set(titles.flatMap((title) => title.moodTags.map((moodTag) => moodTag.name)))
+  );
 
   const sortedTitles = filterAndSortTitles(titles, {
     selectedType,
     searchText,
     selectedGenre,
+    selectedMood,
     sortOption,
   });
 
@@ -167,6 +181,7 @@ function App() {
 
       {isAdminView && authState && isFormOpen && (
         <TitleForm
+          key={editingTitle ? `edit-${editingTitle.id}` : "create-title"}
           editingTitle={editingTitle}
           authToken={authState.token} 
           onCancelEdit={() => {
@@ -201,6 +216,9 @@ function App() {
         selectedGenre={selectedGenre}
         onSelectedGenreChange={setSelectedGenre}
         genres={genres}
+        selectedMood={selectedMood}
+        onSelectedMoodChange={setSelectedMood}
+        moods={moods}
         sortOption={sortOption}
         onSortOptionChange={setSortOption}
       />
@@ -239,7 +257,7 @@ function App() {
       )}
 
       {selectedTitle && (
-        <ReviewModal
+        <TitleDetailModal
           title={selectedTitle}
           onClose={() => setSelectedTitle(null)}
         />

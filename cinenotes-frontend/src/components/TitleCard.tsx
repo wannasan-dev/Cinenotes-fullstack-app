@@ -1,4 +1,5 @@
 import type { Title } from "../types/title";
+import { getPosterSrc } from "../utils/poster";
 
 type TitleCardProps = {
   title: Title;
@@ -16,7 +17,7 @@ export function TitleCard({
   return (
     <article className="title-card">
       <div className="poster-wrapper">
-        <img src={title.posterUrl} alt={title.name} />
+        <img src={getPosterSrc(title.posterPath)} alt={title.name} />
         <span className="type-badge">{title.type}</span>
       </div>
 
@@ -38,15 +39,23 @@ export function TitleCard({
 
       <div className="title-card-content">
         <div className="card-meta">
-          <span>{title.genres.join(" / ")}</span>
-          <span>{title.releaseYear}</span>
+          <span>{title.genres.map((genre) => genre.name).join(" / ") || "No genre"}</span>
+          <span>{getReleaseYear(title.releaseDate)}</span>
         </div>
 
         <h2>{title.name}</h2>
 
-        <p className="rating">⭐ {title.rating}/10</p>
+        {title.tmdbVoteAverage !== null && (
+          <p className="rating">TMDb {title.tmdbVoteAverage.toFixed(1)}/10</p>
+        )}
 
-        <p className="description">{title.description}</p>
+        <p className="description">{title.overview || "No overview yet."}</p>
+
+        {title.moodTags.length > 0 && (
+          <p className="mood-tags">
+            {title.moodTags.map((moodTag) => moodTag.name).join(" / ")}
+          </p>
+        )}
 
         <button
           className="review-button"
@@ -57,4 +66,12 @@ export function TitleCard({
       </div>
     </article>
   );
+}
+
+function getReleaseYear(releaseDate: string | null) {
+  if (!releaseDate) {
+    return "TBA";
+  }
+
+  return new Date(releaseDate).getFullYear();
 }

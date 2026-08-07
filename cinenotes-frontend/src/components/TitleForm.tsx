@@ -1,8 +1,12 @@
-import { useImmer } from "use-immer";
-import { createTitle, updateTitle, type TitleRequest } from "../api/titleApi";
-import type { Title } from "../types/title";
-import { useEffect, useState, } from "react";
-import type { FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import {
+  createTitle,
+  fetchAdminGenres,
+  fetchAdminMoodTags,
+  updateTitle,
+  type TitleRequest,
+} from "../api/titleApi";
+import type { GenreResponse, MoodTagResponse, Title, TitleType } from "../types/title";
 
 type TitleFormProps = {
   editingTitle: Title | null;
@@ -13,39 +17,40 @@ type TitleFormProps = {
 };
 
 type TitleFormData = {
-  type: "MOVIE" | "SERIES";
+  tmdbId: string;
+  type: TitleType;
   name: string;
-  genres: string[];
-  rating: string;
-  description: string;
-  releaseYear: string;
-  posterUrl: string;
-  reviewText: string;
+  originalName: string;
+  overview: string;
+  posterPath: string;
+  backdropPath: string;
+  releaseDate: string;
+  runtimeMinutes: string;
+  originalLanguage: string;
+  country: string;
+  tmdbVoteAverage: string;
+  tmdbVoteCount: string;
+  genreIds: number[];
+  moodTagIds: number[];
 };
 
 const initialFormData: TitleFormData = {
+  tmdbId: "",
   type: "MOVIE",
   name: "",
-  genres: [],
-  rating: "",
-  description: "",
-  releaseYear: String(new Date().getFullYear()),
-  posterUrl: "",
-  reviewText: "",
+  originalName: "",
+  overview: "",
+  posterPath: "",
+  backdropPath: "",
+  releaseDate: "",
+  runtimeMinutes: "",
+  originalLanguage: "",
+  country: "",
+  tmdbVoteAverage: "",
+  tmdbVoteCount: "",
+  genreIds: [],
+  moodTagIds: [],
 };
-
-const genreOptions = [
-  "ACTION",
-  "COMEDY",
-  "CRIME",
-  "DRAMA",
-  "FANTASY",
-  "HORROR",
-  "MYSTERY",
-  "ROMANCE",
-  "SCI_FI",
-  "THRILLER",
-];
 
 export function TitleForm({
   editingTitle,
@@ -54,69 +59,81 @@ export function TitleForm({
   onTitleCreated,
   onTitleUpdated,
 }: TitleFormProps) {
-  const [formData, updateFormData] = useImmer<TitleFormData>(initialFormData);
-  const [selectedGenreToAdd, setSelectedGenreToAdd] = useState("");
+  const [formData, setFormData] = useState<TitleFormData>(() =>
+    toFormData(editingTitle)
+  );
+  const [genres, setGenres] = useState<GenreResponse[]>([]);
+  const [moodTags, setMoodTags] = useState<MoodTagResponse[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [loadingOptions, setLoadingOptions] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
   useEffect(() => {
-  if (editingTitle) {
-    updateFormData(() => ({
-      type: editingTitle.type,
-      name: editingTitle.name,
-      genres: editingTitle.genres,
-      rating: String(editingTitle.rating),
-      description: editingTitle.description,
-      releaseYear: String(editingTitle.releaseYear),
-      posterUrl: editingTitle.posterUrl,
-      reviewText: editingTitle.reviewText,
-    }));
-  } else {
-    updateFormData(() => initialFormData);
-  }
-}, [editingTitle, updateFormData]);
+    async function loadOptions() {
+      try {
+        setLoadingOptions(true);
+        const [genreOptions, moodOptions] = await Promise.all([
+          fetchAdminGenres(authToken),
+          fetchAdminMoodTags(authToken),
+        ]);
+        setGenres(genreOptions);
+        setMoodTags(moodOptions);
+      } catch {
+        setSubmitError("Could not load genre and mood options.");
+      } finally {
+        setLoadingOptions(false);
+      }
+    }
+
+    loadOptions();
+  }, [authToken]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-  event.preventDefault();
+    event.preventDefault();
 
-  try {
-    setSubmitting(true);
-    setSubmitError("");
+    try {
+      setSubmitting(true);
+      setSubmitError("");
 
-    const request: TitleRequest = {
-    ...formData,
-    rating: Number(formData.rating),
-    releaseYear: Number(formData.releaseYear),
-    };
+      const request = toTitleRequest(formData);
 
-    if (editingTitle) {
-      const updatedTitle = await updateTitle(editingTitle.id, request, authToken);
-      onTitleUpdated(updatedTitle);
-    } else {
-      const createdTitle = await createTitle(request, authToken);
-      onTitleCreated(createdTitle);
+      if (editingTitle) {
+        const updatedTitle = await updateTitle(editingTitle.id, request, authToken);
+        onTitleUpdated(updatedTitle);
+      } else {
+        const createdTitle = await createTitle(request, authToken);
+        onTitleCreated(createdTitle);
+      }
+
+      setFormData(initialFormData);
+    } catch {
+      setSubmitError("Could not save title. Please check the form.");
+    } finally {
+      setSubmitting(false);
     }
-
-    updateFormData(() => initialFormData);
-  } catch {
-    setSubmitError("Could not create title. Please check the form.");
-  } finally {
-    setSubmitting(false);
   }
-}
 
-function handleAddGenre() {
-  if (!selectedGenreToAdd) return;
+  function updateField<Key extends keyof TitleFormData>(
+    key: Key,
+    value: TitleFormData[Key]
+  ) {
+    setFormData((currentData) => ({
+      ...currentData,
+      [key]: value,
+    }));
+  }
 
-  updateFormData((draft) => {
-    if (!draft.genres.includes(selectedGenreToAdd)) {
-      draft.genres.push(selectedGenreToAdd);
-    }
-  });
-
-  setSelectedGenreToAdd("");
-}
-
+  function toggleId(key: "genreIds" | "moodTagIds", id: number) {
+    setFormData((currentData) => {
+      const ids = currentData[key];
+      return {
+        ...currentData,
+        [key]: ids.includes(id)
+          ? ids.filter((currentId) => currentId !== id)
+          : [...ids, id],
+      };
+    });
+  }
 
   return (
     <section className="title-form-card">
@@ -136,11 +153,7 @@ function handleAddGenre() {
           <input
             type="text"
             value={formData.name}
-            onChange={(event) =>
-              updateFormData((draft) => {
-                draft.name = event.target.value;
-              })
-            }
+            onChange={(event) => updateField("name", event.target.value)}
           />
         </label>
 
@@ -148,137 +161,221 @@ function handleAddGenre() {
           Type
           <select
             value={formData.type}
-            onChange={(event) =>
-              updateFormData((draft) => {
-                draft.type = event.target.value as "MOVIE" | "SERIES";
-              })
-            }
+            onChange={(event) => updateField("type", event.target.value as TitleType)}
           >
             <option value="MOVIE">Movie</option>
             <option value="SERIES">Series</option>
           </select>
         </label>
 
-       <div className="genre-field">
-        <label htmlFor="genre-select">Genre</label>
-
-        <div className="genre-add-row">
-                <select
-                id="genre-select"
-                value={selectedGenreToAdd}
-                onChange={(event) => setSelectedGenreToAdd(event.target.value)}
-                >
-                <option value="">Choose genre</option>
-                {genreOptions.map((genre) => (
-                    <option key={genre} value={genre}>
-                    {genre}
-                    </option>
-                ))}
-                </select>
-
-                <button type="button" className="small-button" onClick={handleAddGenre}>
-                Add
-                </button>
-            </div>
-
-            {formData.genres.length > 0 && (
-                <div className="selected-genres">
-                {formData.genres.map((genre) => (
-                    <button
-                    type="button"
-                    className="genre-chip"
-                    key={genre}
-                    onClick={() =>
-                        updateFormData((draft) => {
-                        draft.genres = draft.genres.filter((g) => g !== genre);
-                        })
-                    }
-                    >
-                    {genre} ×
-                    </button>
-                ))}
-                </div>
-            )}
-            </div>
+        <label>
+          TMDb ID
+          <input
+            type="number"
+            value={formData.tmdbId}
+            onChange={(event) => updateField("tmdbId", event.target.value)}
+          />
+        </label>
 
         <label>
-          Rating
+          Original name
+          <input
+            type="text"
+            value={formData.originalName}
+            onChange={(event) => updateField("originalName", event.target.value)}
+          />
+        </label>
+
+        <label>
+          Release date
+          <input
+            type="date"
+            value={formData.releaseDate}
+            onChange={(event) => updateField("releaseDate", event.target.value)}
+          />
+        </label>
+
+        <label>
+          Runtime minutes
+          <input
+            type="number"
+            min="1"
+            value={formData.runtimeMinutes}
+            onChange={(event) => updateField("runtimeMinutes", event.target.value)}
+          />
+        </label>
+
+        <label>
+          Original language
+          <input
+            type="text"
+            value={formData.originalLanguage}
+            onChange={(event) => updateField("originalLanguage", event.target.value)}
+          />
+        </label>
+
+        <label>
+          Country
+          <input
+            type="text"
+            value={formData.country}
+            onChange={(event) => updateField("country", event.target.value)}
+          />
+        </label>
+
+        <label>
+          TMDb vote average
           <input
             type="number"
             min="0"
             max="10"
             step="0.1"
-            value={formData.rating}
-            onChange={(event) =>
-                updateFormData((draft) => {
-                draft.rating = event.target.value;
-                })
-            }
-        />
+            value={formData.tmdbVoteAverage}
+            onChange={(event) => updateField("tmdbVoteAverage", event.target.value)}
+          />
         </label>
 
         <label>
-          Release Year
+          TMDb vote count
           <input
             type="number"
-            value={formData.releaseYear}
-            onChange={(event) =>
-                updateFormData((draft) => {
-                draft.releaseYear = event.target.value;
-                })
-            }
-            />
+            min="0"
+            value={formData.tmdbVoteCount}
+            onChange={(event) => updateField("tmdbVoteCount", event.target.value)}
+          />
         </label>
 
         <label className="form-full">
-          Poster URL
+          Poster path
           <input
             type="text"
-            placeholder="/posters/shutter-island.jpg"
-            value={formData.posterUrl}
-            onChange={(event) =>
-              updateFormData((draft) => {
-                draft.posterUrl = event.target.value;
-              })
-            }
+            placeholder="/abc123.jpg or https://..."
+            value={formData.posterPath}
+            onChange={(event) => updateField("posterPath", event.target.value)}
           />
         </label>
 
-        <label>
-          Description
-          <textarea
-            value={formData.description}
-            onChange={(event) =>
-              updateFormData((draft) => {
-                draft.description = event.target.value;
-              })
-            }
+        <label className="form-full">
+          Backdrop path
+          <input
+            type="text"
+            value={formData.backdropPath}
+            onChange={(event) => updateField("backdropPath", event.target.value)}
           />
         </label>
 
-        <label>
-          Review
+        <label className="form-full">
+          Overview
           <textarea
-            value={formData.reviewText}
-            onChange={(event) =>
-              updateFormData((draft) => {
-                draft.reviewText = event.target.value;
-              })
-            }
+            value={formData.overview}
+            onChange={(event) => updateField("overview", event.target.value)}
           />
         </label>
+
+        <fieldset className="option-fieldset">
+          <legend>Genres</legend>
+          {loadingOptions ? (
+            <p>Loading genres...</p>
+          ) : (
+            genres.map((genre) => (
+              <label key={genre.id} className="checkbox-option">
+                <input
+                  type="checkbox"
+                  checked={formData.genreIds.includes(genre.id)}
+                  onChange={() => toggleId("genreIds", genre.id)}
+                />
+                {genre.name}
+              </label>
+            ))
+          )}
+        </fieldset>
+
+        <fieldset className="option-fieldset">
+          <legend>Mood tags</legend>
+          {loadingOptions ? (
+            <p>Loading moods...</p>
+          ) : (
+            moodTags.map((moodTag) => (
+              <label key={moodTag.id} className="checkbox-option">
+                <input
+                  type="checkbox"
+                  checked={formData.moodTagIds.includes(moodTag.id)}
+                  onChange={() => toggleId("moodTagIds", moodTag.id)}
+                />
+                {moodTag.name}
+              </label>
+            ))
+          )}
+        </fieldset>
 
         {submitError && <p className="form-error">{submitError}</p>}
         <div className="form-actions">
-            <button type="submit" disabled={submitting}>
+          <button type="submit" disabled={submitting || loadingOptions}>
             {submitting
-                ? "Saving..."
-                : editingTitle
+              ? "Saving..."
+              : editingTitle
                 ? "Update title"
                 : "Add title"}
-            </button>
+          </button>
         </div>
       </form>
     </section>
   );
+}
+
+function toFormData(title: Title | null): TitleFormData {
+  if (!title) {
+    return initialFormData;
+  }
+
+  return {
+    tmdbId: toStringValue(title.tmdbId),
+    type: title.type,
+    name: title.name,
+    originalName: title.originalName ?? "",
+    overview: title.overview ?? "",
+    posterPath: title.posterPath ?? "",
+    backdropPath: title.backdropPath ?? "",
+    releaseDate: title.releaseDate ?? "",
+    runtimeMinutes: toStringValue(title.runtimeMinutes),
+    originalLanguage: title.originalLanguage ?? "",
+    country: title.country ?? "",
+    tmdbVoteAverage: toStringValue(title.tmdbVoteAverage),
+    tmdbVoteCount: toStringValue(title.tmdbVoteCount),
+    genreIds: title.genres.map((genre) => genre.id),
+    moodTagIds: title.moodTags.map((moodTag) => moodTag.id),
+  };
+}
+
+function toTitleRequest(formData: TitleFormData): TitleRequest {
+  return {
+    tmdbId: toNullableNumber(formData.tmdbId),
+    type: formData.type,
+    name: formData.name,
+    originalName: toNullableString(formData.originalName),
+    overview: toNullableString(formData.overview),
+    posterPath: toNullableString(formData.posterPath),
+    backdropPath: toNullableString(formData.backdropPath),
+    releaseDate: toNullableString(formData.releaseDate),
+    runtimeMinutes: toNullableNumber(formData.runtimeMinutes),
+    originalLanguage: toNullableString(formData.originalLanguage),
+    country: toNullableString(formData.country),
+    tmdbVoteAverage: toNullableNumber(formData.tmdbVoteAverage),
+    tmdbVoteCount: toNullableNumber(formData.tmdbVoteCount),
+    genreIds: formData.genreIds,
+    moodTagIds: formData.moodTagIds,
+  };
+}
+
+function toNullableString(value: string) {
+  const trimmedValue = value.trim();
+  return trimmedValue === "" ? null : trimmedValue;
+}
+
+function toNullableNumber(value: string) {
+  return value.trim() === "" ? null : Number(value);
+}
+
+function toStringValue(value: number | null) {
+  return value === null ? "" : String(value);
 }

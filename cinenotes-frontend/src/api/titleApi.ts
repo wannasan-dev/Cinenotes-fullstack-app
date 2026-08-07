@@ -1,19 +1,59 @@
 import { apiRequest } from "./apiClient";
-import type { Title } from "../types/title";
+import type { GenreResponse, MoodTagResponse, Title, TitleType } from "../types/title";
 
 export type TitleRequest = {
-  type: "MOVIE" | "SERIES";
+  tmdbId: number | null;
+  type: TitleType;
   name: string;
-  genres: string[];
-  rating: number;
-  description: string;
-  releaseYear: number;
-  posterUrl: string;
-  reviewText: string;
+  originalName: string | null;
+  overview: string | null;
+  posterPath: string | null;
+  backdropPath: string | null;
+  releaseDate: string | null;
+  runtimeMinutes: number | null;
+  originalLanguage: string | null;
+  country: string | null;
+  tmdbVoteAverage: number | null;
+  tmdbVoteCount: number | null;
+  genreIds: number[];
+  moodTagIds: number[];
 };
 
-export function fetchTitles(): Promise<Title[]> {
-  return apiRequest<Title[]>("/titles");
+export type TitleQuery = {
+  type?: TitleType;
+  genre?: string;
+  keyword?: string;
+};
+
+export function fetchTitles(query: TitleQuery = {}): Promise<Title[]> {
+  const searchParams = new URLSearchParams();
+
+  if (query.type) {
+    searchParams.set("type", query.type);
+  }
+
+  if (query.genre) {
+    searchParams.set("genre", query.genre);
+  }
+
+  if (query.keyword) {
+    searchParams.set("keyword", query.keyword);
+  }
+
+  const queryString = searchParams.toString();
+  return apiRequest<Title[]>(`/titles${queryString ? `?${queryString}` : ""}`);
+}
+
+export function fetchTitleById(id: number): Promise<Title> {
+  return apiRequest<Title>(`/titles/${id}`);
+}
+
+export function fetchAdminGenres(token?: string | null): Promise<GenreResponse[]> {
+  return apiRequest<GenreResponse[]>("/admin/genres", { token });
+}
+
+export function fetchAdminMoodTags(token?: string | null): Promise<MoodTagResponse[]> {
+  return apiRequest<MoodTagResponse[]>("/admin/mood-tags", { token });
 }
 
 export function createTitle(

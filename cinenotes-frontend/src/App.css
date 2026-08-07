@@ -173,6 +173,13 @@ button:disabled {
   line-height: 1.5;
 }
 
+.mood-tags {
+  color: #c4b5fd;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0 0 12px;
+}
+
 .status-message {
   padding: 40px;
   color: #f8fafc;
@@ -837,4 +844,45 @@ button:disabled {
   color: #f87171;
   margin: 0;
   font-size: 14px;
+}
+
+.option-fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  grid-column: 1 / -1;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 16px;
+  padding: 16px;
+  margin: 0;
+}
+
+.option-fieldset legend {
+  color: #cbd5e1;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 0 8px;
+}
+
+.option-fieldset p {
+  margin: 0;
+  color: #94a3b8;
+}
+
+.checkbox-option {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 8px !important;
+  width: auto;
+  border: 1px solid rgba(168, 85, 247, 0.28);
+  border-radius: 999px;
+  background: rgba(168, 85, 247, 0.1);
+  color: #f8fafc !important;
+  padding: 8px 12px;
+}
+
+.checkbox-option input {
+  width: auto;
+  accent-color: #a78bfa;
 }
