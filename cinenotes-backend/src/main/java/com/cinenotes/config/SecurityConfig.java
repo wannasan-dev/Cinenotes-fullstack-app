@@ -42,6 +42,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/titles/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/reviews/me").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/reviews/title/**").permitAll()
@@ -55,20 +56,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/reviews/**").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/reviews/**").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/reviews/**").authenticated()
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/error").permitAll()
-                        .requestMatchers(
-                                HttpMethod.POST,
-                                "/api/titles/**"
-                        ).hasRole("ADMIN")
-                        .requestMatchers(
-                                HttpMethod.PUT,
-                                "/api/titles/**"
-                        ).hasRole("ADMIN")
-                        .requestMatchers(
-                                HttpMethod.DELETE,
-                                "/api/titles/**"
-                        ).hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
