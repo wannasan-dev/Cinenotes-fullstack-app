@@ -39,7 +39,7 @@ public class CurrentUserService {
         }
 
         AppUser user = appUserRepository.findByUsernameIgnoreCase(identifier)
-                .or(() -> appUserRepository.findByEmail(identifier))
+                .or(() -> appUserRepository.findByEmailIgnoreCase(identifier))
                 .orElseThrow(() -> new ForbiddenOperationException("Authenticated user was not found"));
 
         if (!Boolean.TRUE.equals(user.getIsActive())) {
