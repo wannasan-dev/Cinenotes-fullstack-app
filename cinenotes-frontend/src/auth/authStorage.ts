@@ -1,4 +1,5 @@
 import type { AuthResponse, AuthState } from "../types/auth";
+import type { UserProfileResponse } from "../types/user";
 
 const AUTH_STORAGE_KEY = "cinenotes.auth";
 
@@ -32,6 +33,22 @@ export function storeAuth(response: AuthResponse): AuthState {
 
   localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authState));
   return authState;
+}
+
+export function storeAuthUser(user: UserProfileResponse): AuthState | null {
+  const currentAuth = getStoredAuth();
+
+  if (!currentAuth) {
+    return null;
+  }
+
+  const nextAuthState: AuthState = {
+    ...currentAuth,
+    user,
+  };
+
+  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(nextAuthState));
+  return nextAuthState;
 }
 
 export function clearStoredAuth() {

@@ -3,14 +3,14 @@ import { getPosterSrc } from "../utils/poster";
 
 type TitleCardProps = {
   title: Title;
-  onViewReview: (title: Title) => void;
+  onViewDetails: (title: Title) => void;
   onEdit?: (title: Title) => void;
   onDelete?: (title: Title) => void;
 };
 
 export function TitleCard({
   title,
-  onViewReview,
+  onViewDetails,
   onEdit,
   onDelete,
 }: TitleCardProps) {
@@ -59,9 +59,9 @@ export function TitleCard({
 
         <button
           className="review-button"
-          onClick={() => onViewReview(title)}
+          onClick={() => onViewDetails(title)}
         >
-          View review
+          View details
         </button>
       </div>
     </article>

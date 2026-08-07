@@ -1,9 +1,10 @@
-import { useEffect, useState} from "react";
+import { useCallback, useEffect, useState} from "react";
 import "./App.css";
 import { deleteTitle, fetchTitles } from "./api/titleApi";
 import { TitleCard } from "./components/TitleCard";
 import type { Title } from "./types/title";
 import { TitleDetailModal } from "./components/TitleDetailModal";
+import { ProfilePanel } from "./components/ProfilePanel";
 import { SearchControls } from "./components/SearchControls";
 import { TypeFilterBar } from "./components/TypeFilterBar";
 import { filterAndSortTitles } from "./utils/TitleUtils";
@@ -12,6 +13,7 @@ import LoginForm from "./components/LoginForm";
 import {
   clearStoredAuth,
   getStoredAuth,
+  storeAuthUser,
   storeAuth,
 } from "./auth/authStorage";
 import type { AuthResponse, AuthState } from "./types/auth";
@@ -30,6 +32,7 @@ function App() {
   const [sortOption, setSortOption] = useState("LATEST");
   const [editingTitle, setEditingTitle] = useState<Title | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [authState, setAuthState] = useState<AuthState | null>(() =>
     getStoredAuth()
   );
@@ -88,6 +91,7 @@ function App() {
   function handleAuthSuccess(response: AuthResponse) {
     const nextAuthState = storeAuth(response);
     setAuthState(nextAuthState);
+    setIsProfileOpen(false);
   }
 
   function handleLogout() {
@@ -95,7 +99,15 @@ function App() {
     setAuthState(null);
     setEditingTitle(null);
     setIsFormOpen(false);
+    setIsProfileOpen(false);
   }
+
+  const handleProfileUpdated = useCallback((profile: AuthState["user"]) => {
+    const nextAuthState = storeAuthUser(profile);
+    if (nextAuthState) {
+      setAuthState(nextAuthState);
+    }
+  }, []);
 
   const genres = Array.from(
     new Set(titles.flatMap((title) => title.genres.map((genre) => genre.name)))
@@ -146,6 +158,14 @@ function App() {
 
             <button
               type="button"
+              className="profile-toggle-button"
+              onClick={() => setIsProfileOpen((isOpen) => !isOpen)}
+            >
+              Profile
+            </button>
+
+            <button
+              type="button"
               className="logout-button"
               onClick={handleLogout}
             >
@@ -156,6 +176,14 @@ function App() {
           <LoginForm onAuthSuccess={handleAuthSuccess} />
         )}
       </div>
+
+      {authState && isProfileOpen && (
+        <ProfilePanel
+          authToken={authState.token}
+          initialProfile={authState.user}
+          onProfileUpdated={handleProfileUpdated}
+        />
+      )}
 
       {isAdminView && ( 
         <section className="admin-panel">
@@ -241,7 +269,7 @@ function App() {
             <TitleCard
               key={title.id}
               title={title}
-              onViewReview={setSelectedTitle}
+              onViewDetails={setSelectedTitle}
               onEdit={
                 isAdminView
                   ? (title) => {
@@ -259,6 +287,7 @@ function App() {
       {selectedTitle && (
         <TitleDetailModal
           title={selectedTitle}
+          authState={authState}
           onClose={() => setSelectedTitle(null)}
         />
       )}
