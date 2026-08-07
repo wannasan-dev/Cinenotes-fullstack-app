@@ -7,6 +7,7 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.cinenotes.domain.AuditAction;
 import com.cinenotes.domain.Genre;
 import com.cinenotes.domain.MoodTag;
 import com.cinenotes.domain.Title;
@@ -24,6 +25,7 @@ import com.cinenotes.repository.MoodTagRepository;
 import com.cinenotes.repository.TitleGenreRepository;
 import com.cinenotes.repository.TitleMoodTagRepository;
 import com.cinenotes.repository.TitleRepository;
+import com.cinenotes.user.AppUser;
 
 import lombok.RequiredArgsConstructor;
 
@@ -31,12 +33,16 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TitleService {
 
+    private static final String TARGET_TITLE = "TITLE";
+
     private final TitleRepository titleRepository;
     private final GenreRepository genreRepository;
     private final MoodTagRepository moodTagRepository;
     private final TitleGenreRepository titleGenreRepository;
     private final TitleMoodTagRepository titleMoodTagRepository;
     private final TitleMapper titleMapper;
+    private final AdminAuthorizationService adminAuthorizationService;
+    private final AuditLogService auditLogService;
 
     @Transactional(readOnly = true)
     public List<TitleResponse> findAll() {
@@ -103,6 +109,7 @@ public class TitleService {
 
     @Transactional
     public TitleResponse create(TitleRequest request) {
+        AppUser actor = adminAuthorizationService.requireAdmin();
         ensureUniqueTmdbIdAndType(request, null);
 
         Title title = titleMapper.toEntity(request);
@@ -111,11 +118,20 @@ public class TitleService {
         replaceGenres(savedTitle, request.getGenreIds());
         replaceMoodTags(savedTitle, request.getMoodTagIds());
 
+        auditLogService.log(
+                actor,
+                AuditAction.TITLE_CREATED,
+                TARGET_TITLE,
+                savedTitle.getId(),
+                "Created title " + savedTitle.getName()
+        );
+
         return titleMapper.toResponse(savedTitle);
     }
 
     @Transactional
     public TitleResponse update(Long id, TitleRequest request) {
+        AppUser actor = adminAuthorizationService.requireAdmin();
         Title title = getTitle(id);
         ensureUniqueTmdbIdAndType(request, id);
 
@@ -125,16 +141,33 @@ public class TitleService {
         replaceGenres(savedTitle, request.getGenreIds());
         replaceMoodTags(savedTitle, request.getMoodTagIds());
 
+        auditLogService.log(
+                actor,
+                AuditAction.TITLE_UPDATED,
+                TARGET_TITLE,
+                savedTitle.getId(),
+                "Updated title " + savedTitle.getName()
+        );
+
         return titleMapper.toResponse(savedTitle);
     }
 
     @Transactional
     public void delete(Long id) {
+        AppUser actor = adminAuthorizationService.requireAdmin();
         Title title = getTitle(id);
+        String titleName = title.getName();
 
         titleGenreRepository.deleteByTitleId(id);
         titleMoodTagRepository.deleteByTitleId(id);
         titleRepository.delete(title);
+        auditLogService.log(
+                actor,
+                AuditAction.TITLE_DELETED,
+                TARGET_TITLE,
+                id,
+                "Deleted title " + titleName
+        );
     }
 
     private Title getTitle(Long id) {
