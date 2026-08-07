@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import "./App.css";
-import { deleteTitle, fetchTitles } from "./api/titleApi";
+import { fetchTitles } from "./api/titleApi";
+import { AdminDashboard } from "./components/AdminDashboard";
 import { TitleCard } from "./components/TitleCard";
 import type { Title } from "./types/title";
 import { TitleDetailModal } from "./components/TitleDetailModal";
@@ -10,7 +11,6 @@ import { WatchlistPanel } from "./components/WatchlistPanel";
 import { SearchControls } from "./components/SearchControls";
 import { TypeFilterBar } from "./components/TypeFilterBar";
 import { filterAndSortTitles } from "./utils/TitleUtils";
-import { TitleForm } from "./components/TitleForm";
 import LoginForm from "./components/LoginForm";
 import {
   clearStoredAuth,
@@ -32,8 +32,6 @@ function App() {
   const [selectedMood, setSelectedMood] = useState("ALL");
   const [selectedTitle, setSelectedTitle] = useState<Title | null>(null);
   const [sortOption, setSortOption] = useState("LATEST");
-  const [editingTitle, setEditingTitle] = useState<Title | null>(null);
-  const [isFormOpen, setIsFormOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isWatchlistOpen, setIsWatchlistOpen] = useState(false);
   const [isWatchHistoryOpen, setIsWatchHistoryOpen] = useState(false);
@@ -63,36 +61,6 @@ function App() {
     }
     loadTitles();
   }, [selectedGenre, searchText, selectedType]);
-
-
-  async function handleDeleteTitle(titleToDelete: Title) {
-    if (!authState) return;
-
-    const shouldDelete = window.confirm(
-      `Delete "${titleToDelete.name}" from CineNotes?`
-    );
-
-    if (!shouldDelete) return;
-
-    try {
-      await deleteTitle(titleToDelete.id, authState.token);
-      setTitles((currentTitles) =>
-        currentTitles.filter((title) => title.id !== titleToDelete.id)
-      );
-
-      if (selectedTitle?.id === titleToDelete.id) {
-        setSelectedTitle(null);
-      }
-
-      if (editingTitle?.id === titleToDelete.id) {
-        setEditingTitle(null);
-        setIsFormOpen(false);
-      }
-    } catch {
-      setError("Could not delete title.");
-    }
-  }
-
   function handleAuthSuccess(response: AuthResponse) {
     const nextAuthState = storeAuth(response);
     setAuthState(nextAuthState);
@@ -102,8 +70,6 @@ function App() {
   function handleLogout() {
     clearStoredAuth();
     setAuthState(null);
-    setEditingTitle(null);
-    setIsFormOpen(false);
     setIsProfileOpen(false);
     setIsWatchlistOpen(false);
     setIsWatchHistoryOpen(false);
@@ -228,50 +194,27 @@ function App() {
         />
       )}
 
-      {isAdminView && ( 
-        <section className="admin-panel">
-          <div>
-            <p className="eyebrow">Admin tools</p>
-            <h2>Manage titles</h2>
-          </div>
-
-          {!isFormOpen && (
-            <button
-              type="button"
-              className="admin-add-button"
-              onClick={() => {
-                setEditingTitle(null);
-                setIsFormOpen(true);
-              }}
-            >
-              + Add title
-            </button>
-          )}
-        </section>
-      )}
-
-      {isAdminView && authState && isFormOpen && (
-        <TitleForm
-          key={editingTitle ? `edit-${editingTitle.id}` : "create-title"}
-          editingTitle={editingTitle}
-          authToken={authState.token} 
-          onCancelEdit={() => {
-            setEditingTitle(null);
-            setIsFormOpen(false);
-          }}
-          onTitleCreated={(createdTitle) => {
-            setTitles((currentTitles) => [createdTitle, ...currentTitles]);
-            setIsFormOpen(false);
-          }}
-          onTitleUpdated={(updatedTitle) => {
+      {isAdminView && authState && (
+        <AdminDashboard
+          authToken={authState.token}
+          titles={titles}
+          onTitleCreated={(createdTitle) =>
+            setTitles((currentTitles) => [createdTitle, ...currentTitles])
+          }
+          onTitleUpdated={(updatedTitle) =>
             setTitles((currentTitles) =>
               currentTitles.map((title) =>
                 title.id === updatedTitle.id ? updatedTitle : title
               )
+            )
+          }
+          onTitleDeleted={(titleId) => {
+            setTitles((currentTitles) =>
+              currentTitles.filter((title) => title.id !== titleId)
             );
-
-            setEditingTitle(null);
-            setIsFormOpen(false);
+            if (selectedTitle?.id === titleId) {
+              setSelectedTitle(null);
+            }
           }}
         />
       )}
@@ -313,15 +256,6 @@ function App() {
               key={title.id}
               title={title}
               onViewDetails={setSelectedTitle}
-              onEdit={
-                isAdminView
-                  ? (title) => {
-                      setEditingTitle(title);
-                      setIsFormOpen(true);
-                    }
-                  : undefined
-              }
-              onDelete={isAdminView ? handleDeleteTitle : undefined}
             />
           ))}
         </section>

@@ -1,11 +1,11 @@
 import { useEffect, useState, type FormEvent } from "react";
 import {
   createTitle,
-  fetchAdminGenres,
-  fetchAdminMoodTags,
   updateTitle,
   type TitleRequest,
 } from "../api/titleApi";
+import { fetchAdminGenres } from "../api/adminGenreApi";
+import { fetchAdminMoodTags } from "../api/adminMoodTagApi";
 import type { GenreResponse, MoodTagResponse, Title, TitleType } from "../types/title";
 
 type TitleFormProps = {

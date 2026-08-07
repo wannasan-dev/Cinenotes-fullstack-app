@@ -6,6 +6,7 @@ import {
   fetchVisibleReviewsByTitle,
   updateReview,
 } from "../api/reviewApi";
+import { hideAdminReview } from "../api/adminReviewApi";
 import {
   fetchCurrentUserWatchlistItemByTitle,
   removeWatchlistItemByTitle,
@@ -362,6 +363,24 @@ export function TitleDetailModal({
     }
   }
 
+  async function handleHideReview(review: ReviewResponse) {
+    if (!authState || authState.user.role !== "ADMIN") return;
+
+    try {
+      setSubmittingReview(true);
+      setReviewError("");
+      setReviewMessage("");
+
+      await hideAdminReview(review.id, authState.token);
+      await refreshReviews();
+      setReviewMessage("Review hidden.");
+    } catch (error) {
+      setReviewError(getReviewErrorMessage(error));
+    } finally {
+      setSubmittingReview(false);
+    }
+  }
+
   async function submitReview(action: () => Promise<void>) {
     try {
       setSubmittingReview(true);
@@ -623,8 +642,10 @@ export function TitleDetailModal({
                   key={review.id}
                   review={review}
                   canManage={authState?.user.id === review.user.id}
+                  canModerate={authState?.user.role === "ADMIN"}
                   onEdit={() => openEditForm(review)}
                   onDelete={() => handleDeleteReview(review)}
+                  onHide={() => handleHideReview(review)}
                 />
               ))}
             </div>
@@ -635,8 +656,10 @@ export function TitleDetailModal({
               <ReviewItem
                 review={hiddenOwnReview}
                 canManage
+                canModerate={authState?.user.role === "ADMIN"}
                 onEdit={() => openEditForm(hiddenOwnReview)}
                 onDelete={() => handleDeleteReview(hiddenOwnReview)}
+                onHide={() => handleHideReview(hiddenOwnReview)}
               />
             </div>
           )}
@@ -739,13 +762,17 @@ function ReviewForm({
 function ReviewItem({
   review,
   canManage,
+  canModerate,
   onEdit,
   onDelete,
+  onHide,
 }: {
   review: ReviewResponse;
   canManage: boolean;
+  canModerate: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  onHide: () => void;
 }) {
   const [showSpoiler, setShowSpoiler] = useState(false);
   const hasSpoiler = Boolean(review.containsSpoiler);
@@ -763,10 +790,17 @@ function ReviewItem({
           </p>
         </div>
 
-        {canManage && (
+        {(canManage || canModerate) && (
           <div className="review-owner-actions">
-            <button onClick={onEdit}>Edit</button>
-            <button onClick={onDelete}>Delete</button>
+            {canManage && (
+              <>
+                <button onClick={onEdit}>Edit</button>
+                <button onClick={onDelete}>Delete</button>
+              </>
+            )}
+            {canModerate && review.visible !== false && (
+              <button onClick={onHide}>Hide</button>
+            )}
           </div>
         )}
       </div>

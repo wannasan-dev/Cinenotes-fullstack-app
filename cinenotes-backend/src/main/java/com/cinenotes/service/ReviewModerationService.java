@@ -1,5 +1,7 @@
 package com.cinenotes.service;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +26,19 @@ public class ReviewModerationService {
     private final ReviewMapper reviewMapper;
     private final AdminAuthorizationService adminAuthorizationService;
     private final AuditLogService auditLogService;
+
+    @Transactional(readOnly = true)
+    public List<ReviewResponse> findAll(Boolean visible) {
+        adminAuthorizationService.requireAdmin();
+
+        List<Review> reviews = visible == null
+                ? reviewRepository.findAll()
+                : reviewRepository.findByIsVisible(visible);
+
+        return reviews.stream()
+                .map(reviewMapper::toResponse)
+                .toList();
+    }
 
     @Transactional
     public ReviewResponse hideReview(Long id) {

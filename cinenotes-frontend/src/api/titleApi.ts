@@ -1,5 +1,5 @@
 import { apiRequest } from "./apiClient";
-import type { GenreResponse, MoodTagResponse, Title, TitleType } from "../types/title";
+import type { Title, TitleType } from "../types/title";
 
 export type TitleRequest = {
   tmdbId: number | null;
@@ -46,14 +46,6 @@ export function fetchTitles(query: TitleQuery = {}): Promise<Title[]> {
 
 export function fetchTitleById(id: number): Promise<Title> {
   return apiRequest<Title>(`/titles/${id}`);
-}
-
-export function fetchAdminGenres(token?: string | null): Promise<GenreResponse[]> {
-  return apiRequest<GenreResponse[]>("/admin/genres", { token });
-}
-
-export function fetchAdminMoodTags(token?: string | null): Promise<MoodTagResponse[]> {
-  return apiRequest<MoodTagResponse[]>("/admin/mood-tags", { token });
 }
 
 export function createTitle(

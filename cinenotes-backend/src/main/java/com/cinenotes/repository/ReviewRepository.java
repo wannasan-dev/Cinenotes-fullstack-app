@@ -18,4 +18,6 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     boolean existsByUserIdAndTitleId(Long userId, Long titleId);
 
     List<Review> findByTitleIdAndIsVisibleTrue(Long titleId);
+
+    List<Review> findByIsVisible(Boolean isVisible);
 }
