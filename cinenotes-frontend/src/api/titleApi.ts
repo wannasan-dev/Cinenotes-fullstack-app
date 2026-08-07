@@ -1,100 +1,47 @@
+import { apiRequest } from "./apiClient";
 import type { Title } from "../types/title";
 
-const API_BASE_URL = "http://localhost:8080/api/titles";
-
 export type TitleRequest = {
-
   type: "MOVIE" | "SERIES";
-
   name: string;
-
   genres: string[];
-
   rating: number;
-
   description: string;
-
   releaseYear: number;
-
   posterUrl: string;
-
   reviewText: string;
-
 };
 
-
-export async function fetchTitles(): Promise<Title[]> {
-
-  const response = await fetch(API_BASE_URL);
-
-  if (!response.ok) {
-
-    throw new Error("Failed to fetch titles");
-
-  }
-
-  return response.json();
-
+export function fetchTitles(): Promise<Title[]> {
+  return apiRequest<Title[]>("/titles");
 }
 
-export async function createTitle(
+export function createTitle(
   request: TitleRequest,
-  token: string
+  token?: string | null
 ): Promise<Title> {
-
-  const response = await fetch(API_BASE_URL, {
-
+  return apiRequest<Title>("/admin/titles", {
     method: "POST",
-
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-
-    body: JSON.stringify(request),
-
+    body: request,
+    token,
   });
-
-  if (!response.ok) {
-
-    throw new Error("Failed to create title");
-
-  }
-
-  return response.json();
-
 }
 
-export async function updateTitle(
+export function updateTitle(
   id: number,
   request: TitleRequest,
-  token: string
+  token?: string | null
 ): Promise<Title> {
-  const response = await fetch(`${API_BASE_URL}/${id}`, {
+  return apiRequest<Title>(`/admin/titles/${id}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(request),
+    body: request,
+    token,
   });
-
-  if (!response.ok) {
-    throw new Error("Failed to update title");
-  }
-
-  return response.json();
 }
 
-  export async function deleteTitle(id: number, token: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/${id}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to delete title");
-    }
-  }
+export function deleteTitle(id: number, token?: string | null): Promise<void> {
+  return apiRequest<void>(`/admin/titles/${id}`, {
+    method: "DELETE",
+    token,
+  });
+}

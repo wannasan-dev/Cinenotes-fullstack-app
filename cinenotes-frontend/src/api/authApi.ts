@@ -1,19 +1,16 @@
-import type { LoginRequest, LoginResponse } from "../types/title";
+import { apiRequest } from "./apiClient";
+import type { AuthResponse, LoginRequest, RegisterRequest } from "../types/auth";
 
-const API_BASE_URL = "http://localhost:8080/api";
-
-export async function login(request: LoginRequest): Promise<LoginResponse> {
-  const response = await fetch(`${API_BASE_URL}/auth/login`, {
+export function login(request: LoginRequest): Promise<AuthResponse> {
+  return apiRequest<AuthResponse>("/auth/login", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(request),
+    body: request,
   });
+}
 
-  if (!response.ok) {
-    throw new Error("Login failed");
-  }
-
-  return response.json();
+export function register(request: RegisterRequest): Promise<AuthResponse> {
+  return apiRequest<AuthResponse>("/auth/register", {
+    method: "POST",
+    body: request,
+  });
 }

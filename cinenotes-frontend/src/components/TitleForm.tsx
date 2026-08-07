@@ -98,7 +98,7 @@ export function TitleForm({
     }
 
     updateFormData(() => initialFormData);
-  } catch (error) {
+  } catch {
     setSubmitError("Could not create title. Please check the form.");
   } finally {
     setSubmitting(false);

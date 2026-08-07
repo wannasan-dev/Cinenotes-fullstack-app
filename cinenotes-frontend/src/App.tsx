@@ -9,6 +9,12 @@ import { TypeFilterBar } from "./components/TypeFilterBar";
 import { filterAndSortTitles } from "./utils/TitleUtils";
 import { TitleForm } from "./components/TitleForm";
 import LoginForm from "./components/LoginForm";
+import {
+  clearStoredAuth,
+  getStoredAuth,
+  storeAuth,
+} from "./auth/authStorage";
+import type { AuthResponse, AuthState } from "./types/auth";
 
 function App() {
   const [titles, setTitles] = useState<Title[]>([]);
@@ -22,17 +28,18 @@ function App() {
   const [sortOption, setSortOption] = useState("LATEST");
   const [editingTitle, setEditingTitle] = useState<Title | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
-  const [authToken, setAuthToken] = useState<string | null>(null);
-  const [adminUsername, setAdminUsername] = useState<string | null>(null);
-  const isAdminView = isAdminLoggedIn;
+  const [authState, setAuthState] = useState<AuthState | null>(() =>
+    getStoredAuth()
+  );
+  const isLoggedIn = authState !== null;
+  const isAdminView = authState?.user.role === "ADMIN";
 
   useEffect(() => {  
     async function loadTitles() {
       try { 
         const data = await fetchTitles();
         setTitles(data);
-      } catch (err) {
+      } catch {
         setError("Could not load titles.");
       } finally {
         setLoading(false);
@@ -43,6 +50,8 @@ function App() {
 
 
   async function handleDeleteTitle(titleToDelete: Title) {
+    if (!authState) return;
+
     const shouldDelete = window.confirm(
       `Delete "${titleToDelete.name}" from CineNotes?`
     );
@@ -50,7 +59,7 @@ function App() {
     if (!shouldDelete) return;
 
     try {
-      await deleteTitle(titleToDelete.id, authToken!);
+      await deleteTitle(titleToDelete.id, authState.token);
       setTitles((currentTitles) =>
         currentTitles.filter((title) => title.id !== titleToDelete.id)
       );
@@ -63,9 +72,21 @@ function App() {
         setEditingTitle(null);
         setIsFormOpen(false);
       }
-    } catch (err) {
+    } catch {
       setError("Could not delete title.");
     }
+  }
+
+  function handleAuthSuccess(response: AuthResponse) {
+    const nextAuthState = storeAuth(response);
+    setAuthState(nextAuthState);
+  }
+
+  function handleLogout() {
+    clearStoredAuth();
+    setAuthState(null);
+    setEditingTitle(null);
+    setIsFormOpen(false);
   }
 
   const genres = Array.from(new Set(titles.flatMap((title) => title.genres)));
@@ -97,42 +118,32 @@ function App() {
 
       <div className="mode-banner">
         <span className="mode-badge">
-          {isAdminView ? "Admin Dashboard" : "Public View"}
+          {isAdminView ? "Admin Dashboard" : isLoggedIn ? "User View" : "Public View"}
         </span>
       </div>
 
       <div className="session-panel">
 
-        {isAdminLoggedIn ? (
+        {authState ? (
           <>
-            <span className="admin-identity">Logged in as {adminUsername}</span>
+            <span className="admin-identity">
+              Logged in as {authState.user.displayName || authState.user.username}
+            </span>
 
             <button
               type="button"
               className="logout-button"
-              onClick={() => {
-                setIsAdminLoggedIn(false);
-                setAuthToken(null);
-                setAdminUsername(null);
-                setEditingTitle(null);
-                setIsFormOpen(false);
-              }}
+              onClick={handleLogout}
             >
               Logout
             </button>
           </>
         ) : (
-          <LoginForm
-            onLoginSuccess={(token, username) => {
-              setAuthToken(token);
-              setAdminUsername(username);
-              setIsAdminLoggedIn(true);
-            }}
-          />
+          <LoginForm onAuthSuccess={handleAuthSuccess} />
         )}
       </div>
 
-      {isAdminView && isAdminLoggedIn && ( 
+      {isAdminView && ( 
         <section className="admin-panel">
           <div>
             <p className="eyebrow">Admin tools</p>
@@ -154,10 +165,10 @@ function App() {
         </section>
       )}
 
-      {isAdminView && isAdminLoggedIn && isFormOpen && (
+      {isAdminView && authState && isFormOpen && (
         <TitleForm
           editingTitle={editingTitle}
-          authToken={authToken!} 
+          authToken={authState.token} 
           onCancelEdit={() => {
             setEditingTitle(null);
             setIsFormOpen(false);
@@ -214,14 +225,14 @@ function App() {
               title={title}
               onViewReview={setSelectedTitle}
               onEdit={
-                isAdminView && isAdminLoggedIn
+                isAdminView
                   ? (title) => {
                       setEditingTitle(title);
                       setIsFormOpen(true);
                     }
                   : undefined
               }
-              onDelete={isAdminView && isAdminLoggedIn ? handleDeleteTitle : undefined}
+              onDelete={isAdminView ? handleDeleteTitle : undefined}
             />
           ))}
         </section>
