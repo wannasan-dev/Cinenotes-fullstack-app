@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useState} from "react";
+import { useCallback, useEffect, useState } from "react";
 import "./App.css";
 import { deleteTitle, fetchTitles } from "./api/titleApi";
 import { TitleCard } from "./components/TitleCard";
 import type { Title } from "./types/title";
 import { TitleDetailModal } from "./components/TitleDetailModal";
 import { ProfilePanel } from "./components/ProfilePanel";
+import { WatchHistoryPanel } from "./components/WatchHistoryPanel";
+import { WatchlistPanel } from "./components/WatchlistPanel";
 import { SearchControls } from "./components/SearchControls";
 import { TypeFilterBar } from "./components/TypeFilterBar";
 import { filterAndSortTitles } from "./utils/TitleUtils";
@@ -33,6 +35,9 @@ function App() {
   const [editingTitle, setEditingTitle] = useState<Title | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isWatchlistOpen, setIsWatchlistOpen] = useState(false);
+  const [isWatchHistoryOpen, setIsWatchHistoryOpen] = useState(false);
+  const [watchRefreshKey, setWatchRefreshKey] = useState(0);
   const [authState, setAuthState] = useState<AuthState | null>(() =>
     getStoredAuth()
   );
@@ -100,6 +105,8 @@ function App() {
     setEditingTitle(null);
     setIsFormOpen(false);
     setIsProfileOpen(false);
+    setIsWatchlistOpen(false);
+    setIsWatchHistoryOpen(false);
   }
 
   const handleProfileUpdated = useCallback((profile: AuthState["user"]) => {
@@ -107,6 +114,10 @@ function App() {
     if (nextAuthState) {
       setAuthState(nextAuthState);
     }
+  }, []);
+
+  const handleWatchDataChanged = useCallback(() => {
+    setWatchRefreshKey((currentKey) => currentKey + 1);
   }, []);
 
   const genres = Array.from(
@@ -166,6 +177,22 @@ function App() {
 
             <button
               type="button"
+              className="profile-toggle-button"
+              onClick={() => setIsWatchlistOpen((isOpen) => !isOpen)}
+            >
+              Watchlist
+            </button>
+
+            <button
+              type="button"
+              className="profile-toggle-button"
+              onClick={() => setIsWatchHistoryOpen((isOpen) => !isOpen)}
+            >
+              History
+            </button>
+
+            <button
+              type="button"
               className="logout-button"
               onClick={handleLogout}
             >
@@ -182,6 +209,22 @@ function App() {
           authToken={authState.token}
           initialProfile={authState.user}
           onProfileUpdated={handleProfileUpdated}
+        />
+      )}
+
+      {authState && isWatchlistOpen && (
+        <WatchlistPanel
+          authToken={authState.token}
+          refreshKey={watchRefreshKey}
+          onChanged={handleWatchDataChanged}
+        />
+      )}
+
+      {authState && isWatchHistoryOpen && (
+        <WatchHistoryPanel
+          authToken={authState.token}
+          refreshKey={watchRefreshKey}
+          onChanged={handleWatchDataChanged}
         />
       )}
 
@@ -288,6 +331,7 @@ function App() {
         <TitleDetailModal
           title={selectedTitle}
           authState={authState}
+          onWatchDataChanged={handleWatchDataChanged}
           onClose={() => setSelectedTitle(null)}
         />
       )}

@@ -6,6 +6,17 @@ import {
   fetchVisibleReviewsByTitle,
   updateReview,
 } from "../api/reviewApi";
+import {
+  fetchCurrentUserWatchlistItemByTitle,
+  removeWatchlistItemByTitle,
+  upsertWatchlistItem,
+} from "../api/watchlistApi";
+import {
+  createWatchLog,
+  deleteWatchLog,
+  fetchCurrentUserWatchLogsByTitle,
+  updateWatchLog,
+} from "../api/watchLogApi";
 import { ApiError } from "../api/apiClient";
 import type { AuthState } from "../types/auth";
 import type {
@@ -13,12 +24,29 @@ import type {
   ReviewResponse,
   ReviewUpdateRequest,
 } from "../types/review";
+import type {
+  WatchCompany,
+  WatchLogCreateRequest,
+  WatchLogResponse,
+  WatchLogUpdateRequest,
+  WatchPlace,
+} from "../types/watchLog";
+import type { WatchlistItemResponse, WatchStatus } from "../types/watchlist";
 import type { Title } from "../types/title";
 import { getPosterSrc } from "../utils/poster";
+import {
+  getWatchCompanyLabel,
+  getWatchPlaceLabel,
+  getWatchStatusLabel,
+  WATCH_COMPANIES,
+  WATCH_PLACES,
+  WATCH_STATUSES,
+} from "../utils/watchLabels";
 
 type TitleDetailModalProps = {
   title: Title;
   authState: AuthState | null;
+  onWatchDataChanged: () => void;
   onClose: () => void;
 };
 
@@ -37,9 +65,28 @@ type ReviewFormProps = {
   onSubmit: (formData: ReviewFormData) => void;
 };
 
+type WatchLogFormData = {
+  watchedDate: string;
+  watchPlace: "" | WatchPlace;
+  watchCompany: "" | WatchCompany;
+  rewatch: boolean;
+  memoryNote: string;
+  moodTagIds: number[];
+};
+
+type WatchLogFormProps = {
+  mode: "create" | "edit";
+  title: Title;
+  initialLog?: WatchLogResponse;
+  submitting: boolean;
+  onCancel: () => void;
+  onSubmit: (formData: WatchLogFormData) => void;
+};
+
 export function TitleDetailModal({
   title,
   authState,
+  onWatchDataChanged,
   onClose,
 }: TitleDetailModalProps) {
   const [visibleReviews, setVisibleReviews] = useState<ReviewResponse[]>([]);
@@ -50,6 +97,16 @@ export function TitleDetailModal({
   const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
   const [editingReview, setEditingReview] = useState<ReviewResponse | null>(null);
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [watchlistItem, setWatchlistItem] =
+    useState<WatchlistItemResponse | null>(null);
+  const [titleWatchLogs, setTitleWatchLogs] = useState<WatchLogResponse[]>([]);
+  const [loadingWatchData, setLoadingWatchData] = useState(false);
+  const [watchError, setWatchError] = useState("");
+  const [watchMessage, setWatchMessage] = useState("");
+  const [isWatchLogFormOpen, setIsWatchLogFormOpen] = useState(false);
+  const [editingWatchLog, setEditingWatchLog] =
+    useState<WatchLogResponse | null>(null);
+  const [submittingWatch, setSubmittingWatch] = useState(false);
 
   const ownReview = useMemo(
     () => currentUserReviews.find((review) => review.titleId === title.id) ?? null,
@@ -86,6 +143,35 @@ export function TitleDetailModal({
     loadReviews();
   }, [authState, title.id]);
 
+  useEffect(() => {
+    async function loadWatchData() {
+      if (!authState) {
+        setWatchlistItem(null);
+        setTitleWatchLogs([]);
+        return;
+      }
+
+      try {
+        setLoadingWatchData(true);
+        setWatchError("");
+
+        const [watchlistItemResult, watchLogs] = await Promise.all([
+          fetchWatchlistItemOrNull(title.id, authState.token),
+          fetchCurrentUserWatchLogsByTitle(title.id, authState.token),
+        ]);
+
+        setWatchlistItem(watchlistItemResult);
+        setTitleWatchLogs(watchLogs);
+      } catch (error) {
+        setWatchError(getWatchErrorMessage(error));
+      } finally {
+        setLoadingWatchData(false);
+      }
+    }
+
+    loadWatchData();
+  }, [authState, title.id]);
+
   async function refreshReviews() {
     const [titleReviews, userReviews] = await Promise.all([
       fetchVisibleReviewsByTitle(title.id),
@@ -96,6 +182,132 @@ export function TitleDetailModal({
 
     setVisibleReviews(titleReviews);
     setCurrentUserReviews(userReviews);
+  }
+
+  async function refreshWatchData() {
+    if (!authState) return;
+
+    const [watchlistItemResult, watchLogs] = await Promise.all([
+      fetchWatchlistItemOrNull(title.id, authState.token),
+      fetchCurrentUserWatchLogsByTitle(title.id, authState.token),
+    ]);
+
+    setWatchlistItem(watchlistItemResult);
+    setTitleWatchLogs(watchLogs);
+    onWatchDataChanged();
+  }
+
+  async function handleUpsertWatchlistItem(
+    status: WatchStatus,
+    favorite: boolean
+  ) {
+    if (!authState) return;
+
+    try {
+      setSubmittingWatch(true);
+      setWatchError("");
+      setWatchMessage("");
+
+      const updatedItem = await upsertWatchlistItem(
+        {
+          titleId: title.id,
+          status,
+          favorite,
+        },
+        authState.token
+      );
+
+      setWatchlistItem(updatedItem);
+      onWatchDataChanged();
+      setWatchMessage("Watchlist updated.");
+    } catch (error) {
+      setWatchError(getWatchErrorMessage(error));
+    } finally {
+      setSubmittingWatch(false);
+    }
+  }
+
+  async function handleRemoveWatchlistItem() {
+    if (!authState) return;
+
+    try {
+      setSubmittingWatch(true);
+      setWatchError("");
+      setWatchMessage("");
+
+      await removeWatchlistItemByTitle(title.id, authState.token);
+      setWatchlistItem(null);
+      onWatchDataChanged();
+      setWatchMessage("Removed from watchlist.");
+    } catch (error) {
+      setWatchError(getWatchErrorMessage(error));
+    } finally {
+      setSubmittingWatch(false);
+    }
+  }
+
+  async function handleCreateWatchLog(formData: WatchLogFormData) {
+    if (!authState) return;
+
+    await submitWatchLog(async () => {
+      const request: WatchLogCreateRequest = {
+        titleId: title.id,
+        ...toWatchLogRequest(formData, "create"),
+      };
+
+      await createWatchLog(request, authState.token);
+      setWatchMessage("Watch logged.");
+    });
+  }
+
+  async function handleUpdateWatchLog(formData: WatchLogFormData) {
+    if (!authState || !editingWatchLog) return;
+
+    await submitWatchLog(async () => {
+      const request: WatchLogUpdateRequest = toWatchLogRequest(formData, "update");
+      await updateWatchLog(editingWatchLog.id, request, authState.token);
+      setWatchMessage("Watch log updated.");
+    });
+  }
+
+  async function handleDeleteWatchLog(log: WatchLogResponse) {
+    if (!authState) return;
+
+    const shouldDelete = window.confirm("Delete this watch log?");
+    if (!shouldDelete) return;
+
+    try {
+      setSubmittingWatch(true);
+      setWatchError("");
+      setWatchMessage("");
+
+      await deleteWatchLog(log.id, authState.token);
+      await refreshWatchData();
+      setEditingWatchLog(null);
+      setIsWatchLogFormOpen(false);
+      setWatchMessage("Watch log deleted.");
+    } catch (error) {
+      setWatchError(getWatchErrorMessage(error));
+    } finally {
+      setSubmittingWatch(false);
+    }
+  }
+
+  async function submitWatchLog(action: () => Promise<void>) {
+    try {
+      setSubmittingWatch(true);
+      setWatchError("");
+      setWatchMessage("");
+
+      await action();
+      await refreshWatchData();
+      setEditingWatchLog(null);
+      setIsWatchLogFormOpen(false);
+    } catch (error) {
+      setWatchError(getWatchErrorMessage(error));
+    } finally {
+      setSubmittingWatch(false);
+    }
   }
 
   async function handleCreateReview(formData: ReviewFormData) {
@@ -224,6 +436,136 @@ export function TitleDetailModal({
             <p className="review-text">{title.overview || "No overview available yet."}</p>
           </div>
         </div>
+
+        <section className="watch-detail-section">
+          <div className="reviews-header">
+            <div>
+              <p className="eyebrow">Your watching</p>
+              <h3>Watchlist and logs</h3>
+            </div>
+
+            {authState && !isWatchLogFormOpen && (
+              <button
+                className="review-action-button"
+                onClick={() => {
+                  setEditingWatchLog(null);
+                  setIsWatchLogFormOpen(true);
+                  setWatchError("");
+                  setWatchMessage("");
+                }}
+              >
+                Log watch
+              </button>
+            )}
+          </div>
+
+          {!authState ? (
+            <p className="review-login-note">
+              Log in to manage your watchlist and watch history.
+            </p>
+          ) : (
+            <>
+              <div className="watchlist-controls">
+                <label>
+                  Watch status
+                  <select
+                    value={watchlistItem?.status ?? "WANT_TO_WATCH"}
+                    disabled={submittingWatch}
+                    onChange={(event) =>
+                      handleUpsertWatchlistItem(
+                        event.target.value as WatchStatus,
+                        Boolean(watchlistItem?.favorite)
+                      )
+                    }
+                  >
+                    {WATCH_STATUSES.map((status) => (
+                      <option key={status} value={status}>
+                        {getWatchStatusLabel(status)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="inline-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(watchlistItem?.favorite)}
+                    disabled={submittingWatch}
+                    onChange={(event) =>
+                      handleUpsertWatchlistItem(
+                        watchlistItem?.status ?? "WANT_TO_WATCH",
+                        event.target.checked
+                      )
+                    }
+                  />
+                  Favorite
+                </label>
+
+                {!watchlistItem ? (
+                  <button
+                    type="button"
+                    onClick={() => handleUpsertWatchlistItem("WANT_TO_WATCH", false)}
+                    disabled={submittingWatch}
+                  >
+                    Add to watchlist
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleRemoveWatchlistItem}
+                    disabled={submittingWatch}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+
+              {isWatchLogFormOpen && (
+                <WatchLogForm
+                  key={
+                    editingWatchLog
+                      ? `edit-watch-log-${editingWatchLog.id}`
+                      : "create-watch-log"
+                  }
+                  mode={editingWatchLog ? "edit" : "create"}
+                  title={title}
+                  initialLog={editingWatchLog ?? undefined}
+                  submitting={submittingWatch}
+                  onCancel={() => {
+                    setEditingWatchLog(null);
+                    setIsWatchLogFormOpen(false);
+                  }}
+                  onSubmit={
+                    editingWatchLog ? handleUpdateWatchLog : handleCreateWatchLog
+                  }
+                />
+              )}
+
+              {watchMessage && <p className="form-success">{watchMessage}</p>}
+              {watchError && <p className="form-error">{watchError}</p>}
+
+              {loadingWatchData ? (
+                <p className="watch-empty">Loading your watch data...</p>
+              ) : titleWatchLogs.length === 0 ? (
+                <p className="watch-empty">No watch logs for this title yet.</p>
+              ) : (
+                <div className="watch-log-list compact">
+                  {titleWatchLogs.map((log) => (
+                    <WatchLogItem
+                      key={log.id}
+                      log={log}
+                      onEdit={() => {
+                        setEditingWatchLog(log);
+                        setIsWatchLogFormOpen(true);
+                      }}
+                      onDelete={() => handleDeleteWatchLog(log)}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </section>
 
         <section className="reviews-section">
           <div className="reviews-header">
@@ -446,6 +788,180 @@ function ReviewItem({
   );
 }
 
+function WatchLogForm({
+  mode,
+  title,
+  initialLog,
+  submitting,
+  onCancel,
+  onSubmit,
+}: WatchLogFormProps) {
+  const [formData, setFormData] = useState<WatchLogFormData>(() => ({
+    watchedDate: initialLog?.watchedDate ?? new Date().toISOString().slice(0, 10),
+    watchPlace: initialLog?.watchPlace ?? "",
+    watchCompany: initialLog?.watchCompany ?? "",
+    rewatch: Boolean(initialLog?.rewatch),
+    memoryNote: initialLog?.memoryNote ?? "",
+    moodTagIds: initialLog?.moods.map((mood) => mood.id) ?? [],
+  }));
+
+  function updateField<Key extends keyof WatchLogFormData>(
+    key: Key,
+    value: WatchLogFormData[Key]
+  ) {
+    setFormData((currentData) => ({
+      ...currentData,
+      [key]: value,
+    }));
+  }
+
+  function toggleMood(id: number) {
+    setFormData((currentData) => ({
+      ...currentData,
+      moodTagIds: currentData.moodTagIds.includes(id)
+        ? currentData.moodTagIds.filter((moodId) => moodId !== id)
+        : [...currentData.moodTagIds, id],
+    }));
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    onSubmit(formData);
+  }
+
+  return (
+    <form className="watch-log-form" onSubmit={handleSubmit}>
+      <label>
+        Watched date
+        <input
+          type="date"
+          value={formData.watchedDate}
+          onChange={(event) => updateField("watchedDate", event.target.value)}
+        />
+      </label>
+
+      <label>
+        Place
+        <select
+          value={formData.watchPlace}
+          onChange={(event) =>
+            updateField("watchPlace", event.target.value as "" | WatchPlace)
+          }
+        >
+          <option value="">Not set</option>
+          {WATCH_PLACES.map((place) => (
+            <option key={place} value={place}>
+              {getWatchPlaceLabel(place)}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label>
+        Company
+        <select
+          value={formData.watchCompany}
+          onChange={(event) =>
+            updateField("watchCompany", event.target.value as "" | WatchCompany)
+          }
+        >
+          <option value="">Not set</option>
+          {WATCH_COMPANIES.map((company) => (
+            <option key={company} value={company}>
+              {getWatchCompanyLabel(company)}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="inline-checkbox">
+        <input
+          type="checkbox"
+          checked={formData.rewatch}
+          onChange={(event) => updateField("rewatch", event.target.checked)}
+        />
+        Rewatch
+      </label>
+
+      <label className="watch-log-form-full">
+        Memory note
+        <textarea
+          value={formData.memoryNote}
+          onChange={(event) => updateField("memoryNote", event.target.value)}
+          maxLength={5000}
+        />
+      </label>
+
+      {title.moodTags.length > 0 && (
+        <fieldset className="watch-log-form-full option-fieldset">
+          <legend>Moods</legend>
+          {title.moodTags.map((mood) => (
+            <label key={mood.id} className="checkbox-option">
+              <input
+                type="checkbox"
+                checked={formData.moodTagIds.includes(mood.id)}
+                onChange={() => toggleMood(mood.id)}
+              />
+              {mood.name}
+            </label>
+          ))}
+        </fieldset>
+      )}
+
+      <div className="watch-log-form-actions">
+        <button type="button" onClick={onCancel} disabled={submitting}>
+          Cancel
+        </button>
+        <button type="submit" disabled={submitting}>
+          {submitting
+            ? "Saving..."
+            : mode === "edit"
+              ? "Update log"
+              : "Save log"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function WatchLogItem({
+  log,
+  onEdit,
+  onDelete,
+}: {
+  log: WatchLogResponse;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <article className="watch-log-item compact">
+      <div className="watch-log-header">
+        <div>
+          <strong>{log.watchedDate || "Date not set"}</strong>
+          <p>
+            {log.watchPlace ? getWatchPlaceLabel(log.watchPlace) : "Place not set"}{" "}
+            |{" "}
+            {log.watchCompany
+              ? getWatchCompanyLabel(log.watchCompany)
+              : "Company not set"}
+            {log.rewatch ? " | Rewatch" : ""}
+          </p>
+        </div>
+
+        <div className="watch-log-actions">
+          <button onClick={onEdit}>Edit</button>
+          <button onClick={onDelete}>Delete</button>
+        </div>
+      </div>
+
+      {log.memoryNote && <p className="review-text">{log.memoryNote}</p>}
+      {log.moods.length > 0 && (
+        <p className="mood-tags">{log.moods.map((mood) => mood.name).join(" / ")}</p>
+      )}
+    </article>
+  );
+}
+
 function toReviewRequest(formData: ReviewFormData) {
   return {
     reviewText: toNullableString(formData.reviewText),
@@ -457,6 +973,44 @@ function toReviewRequest(formData: ReviewFormData) {
 function toNullableString(value: string) {
   const trimmedValue = value.trim();
   return trimmedValue === "" ? null : trimmedValue;
+}
+
+function toWatchLogRequest(
+  formData: WatchLogFormData,
+  mode: "create" | "update"
+) {
+  return {
+    watchedDate: formData.watchedDate === "" ? null : formData.watchedDate,
+    watchPlace: formData.watchPlace === "" ? null : formData.watchPlace,
+    watchCompany:
+      formData.watchCompany === "" ? null : formData.watchCompany,
+    rewatch: formData.rewatch,
+    memoryNote: formData.memoryNote,
+    moodTagIds:
+      mode === "create" && formData.moodTagIds.length === 0
+        ? null
+        : formData.moodTagIds,
+  };
+}
+
+async function fetchWatchlistItemOrNull(titleId: number, token: string) {
+  try {
+    return await fetchCurrentUserWatchlistItemByTitle(titleId, token);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+function getWatchErrorMessage(error: unknown) {
+  if (error instanceof ApiError) {
+    return error.message;
+  }
+
+  return "Could not load or save watch data right now.";
 }
 
 function getReviewErrorMessage(error: unknown) {

@@ -858,6 +858,174 @@ button:disabled {
   margin-top: 14px;
 }
 
+.watch-panel,
+.watch-detail-section {
+  margin: 0 0 34px;
+  padding: 24px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 20px;
+  background: rgba(24, 24, 27, 0.72);
+}
+
+.watch-detail-section {
+  margin: 28px 0 0;
+  background: rgba(9, 9, 11, 0.28);
+}
+
+.watch-panel-header,
+.watch-log-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.watch-panel-header h2,
+.watch-log-item h3,
+.watchlist-item h3 {
+  margin: 4px 0 8px;
+}
+
+.watch-panel select,
+.watchlist-controls select,
+.watch-log-form select,
+.watch-log-form input,
+.watch-log-form textarea,
+.watchlist-item select {
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(9, 9, 11, 0.8);
+  color: #f8fafc;
+  border-radius: 12px;
+  padding: 10px 12px;
+  outline: none;
+}
+
+.watchlist-grid,
+.watch-log-list {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.watchlist-item,
+.watch-log-item {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 16px;
+  background: rgba(9, 9, 11, 0.38);
+}
+
+.watchlist-item img,
+.watch-log-item img {
+  width: 86px;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.watchlist-item label,
+.watchlist-controls label,
+.watch-log-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #cbd5e1;
+  font-size: 14px;
+  font-weight: 700;
+  margin-top: 12px;
+}
+
+.watchlist-controls {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: end;
+  margin: 16px 0;
+}
+
+.inline-checkbox {
+  flex-direction: row !important;
+  align-items: center;
+}
+
+.inline-checkbox input {
+  width: auto;
+  accent-color: #a78bfa;
+}
+
+.watchlist-controls button,
+.watchlist-item button,
+.watch-log-actions button,
+.watch-log-form-actions button {
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(148, 163, 184, 0.12);
+  color: #f8fafc;
+  padding: 10px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.watch-log-form-actions button[type="submit"] {
+  border: none;
+  background: linear-gradient(135deg, #c4b5fd, #a78bfa);
+  color: #09090b;
+}
+
+.watch-log-list.compact {
+  gap: 12px;
+}
+
+.watch-log-item.compact {
+  display: block;
+}
+
+.watch-log-actions,
+.watch-log-form-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.watch-log-item p,
+.watchlist-item p {
+  margin: 6px 0;
+  color: #94a3b8;
+}
+
+.watch-badge {
+  display: inline-block;
+  color: #86efac !important;
+  font-weight: 800;
+}
+
+.watch-empty {
+  color: #94a3b8;
+}
+
+.watch-log-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 16px;
+  background: rgba(9, 9, 11, 0.4);
+}
+
+.watch-log-form textarea {
+  min-height: 92px;
+  resize: vertical;
+}
+
+.watch-log-form-full {
+  grid-column: 1 / -1;
+}
+
 @media (max-width: 700px) {
   .modal-content {
     grid-template-columns: 1fr;
@@ -869,15 +1037,23 @@ button:disabled {
 
   .profile-panel,
   .profile-form,
-  .review-form {
+  .review-form,
+  .watch-log-form {
     grid-template-columns: 1fr;
   }
 
   .reviews-header,
   .own-review-bar,
-  .review-item-header {
+  .review-item-header,
+  .watch-panel-header,
+  .watch-log-header {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .watchlist-item,
+  .watch-log-item {
+    grid-template-columns: 1fr;
   }
 }
 
