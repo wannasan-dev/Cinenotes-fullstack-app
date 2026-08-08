@@ -15,6 +15,7 @@ import com.cinenotes.exception.ResourceNotFoundException;
 import com.cinenotes.mapper.MoodTagMapper;
 import com.cinenotes.repository.MoodTagRepository;
 import com.cinenotes.repository.TitleMoodTagRepository;
+import com.cinenotes.repository.WatchLogMoodRepository;
 import com.cinenotes.user.AppUser;
 
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class MoodTagService {
 
     private final MoodTagRepository moodTagRepository;
     private final TitleMoodTagRepository titleMoodTagRepository;
+    private final WatchLogMoodRepository watchLogMoodRepository;
     private final MoodTagMapper moodTagMapper;
     private final AdminAuthorizationService adminAuthorizationService;
     private final AuditLogService auditLogService;
@@ -88,6 +90,10 @@ public class MoodTagService {
 
         if (titleMoodTagRepository.existsByMoodTagId(id)) {
             throw new InvalidOperationException("Mood tag is assigned to one or more titles");
+        }
+
+        if (watchLogMoodRepository.existsByMoodTagId(id)) {
+            throw new InvalidOperationException("Mood tag is assigned to one or more watch logs");
         }
 
         moodTagRepository.delete(moodTag);

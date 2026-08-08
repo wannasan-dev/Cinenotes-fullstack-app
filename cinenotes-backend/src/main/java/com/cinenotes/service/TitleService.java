@@ -22,9 +22,12 @@ import com.cinenotes.exception.ResourceNotFoundException;
 import com.cinenotes.mapper.TitleMapper;
 import com.cinenotes.repository.GenreRepository;
 import com.cinenotes.repository.MoodTagRepository;
+import com.cinenotes.repository.ReviewRepository;
 import com.cinenotes.repository.TitleGenreRepository;
 import com.cinenotes.repository.TitleMoodTagRepository;
 import com.cinenotes.repository.TitleRepository;
+import com.cinenotes.repository.WatchLogRepository;
+import com.cinenotes.repository.WatchlistItemRepository;
 import com.cinenotes.user.AppUser;
 
 import lombok.RequiredArgsConstructor;
@@ -40,6 +43,9 @@ public class TitleService {
     private final MoodTagRepository moodTagRepository;
     private final TitleGenreRepository titleGenreRepository;
     private final TitleMoodTagRepository titleMoodTagRepository;
+    private final ReviewRepository reviewRepository;
+    private final WatchlistItemRepository watchlistItemRepository;
+    private final WatchLogRepository watchLogRepository;
     private final TitleMapper titleMapper;
     private final AdminAuthorizationService adminAuthorizationService;
     private final AuditLogService auditLogService;
@@ -158,6 +164,8 @@ public class TitleService {
         Title title = getTitle(id);
         String titleName = title.getName();
 
+        ensureNoUserGeneratedActivity(id);
+
         titleGenreRepository.deleteByTitleId(id);
         titleMoodTagRepository.deleteByTitleId(id);
         titleRepository.delete(title);
@@ -168,6 +176,16 @@ public class TitleService {
                 id,
                 "Deleted title " + titleName
         );
+    }
+
+    private void ensureNoUserGeneratedActivity(Long titleId) {
+        if (reviewRepository.existsByTitleId(titleId)
+                || watchlistItemRepository.existsByTitleId(titleId)
+                || watchLogRepository.existsByTitleId(titleId)) {
+            throw new InvalidOperationException(
+                    "Title cannot be deleted because it has user-generated activity."
+            );
+        }
     }
 
     private Title getTitle(Long id) {

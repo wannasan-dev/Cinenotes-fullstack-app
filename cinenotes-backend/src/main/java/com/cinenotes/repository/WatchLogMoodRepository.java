@@ -17,5 +17,7 @@ public interface WatchLogMoodRepository extends JpaRepository<WatchLogMood, Long
 
     boolean existsByWatchLogIdAndMoodTagId(Long watchLogId, Long moodTagId);
 
+    boolean existsByMoodTagId(Long moodTagId);
+
     void deleteByWatchLogId(Long watchLogId);
 }

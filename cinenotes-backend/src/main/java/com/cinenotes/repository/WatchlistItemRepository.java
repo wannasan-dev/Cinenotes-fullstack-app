@@ -14,4 +14,6 @@ public interface WatchlistItemRepository extends JpaRepository<WatchlistItem, Lo
     Optional<WatchlistItem> findByUserIdAndTitleId(Long userId, Long titleId);
 
     boolean existsByUserIdAndTitleId(Long userId, Long titleId);
+
+    boolean existsByTitleId(Long titleId);
 }
