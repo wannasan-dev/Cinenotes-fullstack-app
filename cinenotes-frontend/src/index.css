@@ -15,3 +15,7 @@ body,
 body {
   min-width: 320px;
 }
+
+body {
+  overflow-x: hidden;
+}

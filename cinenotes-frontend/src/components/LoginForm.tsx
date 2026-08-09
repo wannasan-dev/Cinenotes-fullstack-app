@@ -3,19 +3,24 @@ import { login, register } from "../api/authApi";
 import { ApiError } from "../api/apiClient";
 import type { AuthResponse } from "../types/auth";
 
-type LoginFormProps = {
+export type AuthMode = "login" | "register";
+
+type AuthFormProps = {
+  mode: AuthMode;
+  onModeChange: (mode: AuthMode) => void;
   onAuthSuccess: (response: AuthResponse) => void;
 };
 
-type AuthMode = "login" | "register";
-
-function LoginForm({ onAuthSuccess }: LoginFormProps) {
-  const [mode, setMode] = useState<AuthMode>("login");
-  const [usernameOrEmail, setUsernameOrEmail] = useState("admin");
+export function AuthForm({
+  mode,
+  onModeChange,
+  onAuthSuccess,
+}: AuthFormProps) {
+  const [usernameOrEmail, setUsernameOrEmail] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [password, setPassword] = useState("admin123");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -35,39 +40,30 @@ function LoginForm({ onAuthSuccess }: LoginFormProps) {
       setError("");
 
       const response = isLogin
-        ? await login({
-            usernameOrEmail,
-            password,
-          })
-        : await register({
-            username,
-            email,
-            password,
-            displayName,
-          });
+        ? await login({ usernameOrEmail, password })
+        : await register({ username, email, password, displayName });
 
       onAuthSuccess(response);
-    } catch (error) {
-      setError(getAuthErrorMessage(error));
+    } catch (caughtError) {
+      setError(getAuthErrorMessage(caughtError));
     } finally {
       setSubmitting(false);
     }
   }
 
   function switchMode(nextMode: AuthMode) {
-    setMode(nextMode);
     setError("");
-    setPassword(nextMode === "login" ? "admin123" : "");
+    setPassword("");
+    onModeChange(nextMode);
   }
 
   return (
-    <form onSubmit={handleSubmit} className="login-form">
-      <h2>{isLogin ? "Login" : "Create account"}</h2>
-
+    <form onSubmit={handleSubmit} className="auth-form">
       {isLogin ? (
         <label>
           Username or email
           <input
+            autoFocus
             value={usernameOrEmail}
             onChange={(event) => setUsernameOrEmail(event.target.value)}
             autoComplete="username"
@@ -78,6 +74,7 @@ function LoginForm({ onAuthSuccess }: LoginFormProps) {
           <label>
             Username
             <input
+              autoFocus
               value={username}
               onChange={(event) => setUsername(event.target.value)}
               autoComplete="username"
@@ -95,7 +92,7 @@ function LoginForm({ onAuthSuccess }: LoginFormProps) {
           </label>
 
           <label>
-            Display name
+            Display name <span className="optional-label">Optional</span>
             <input
               value={displayName}
               onChange={(event) => setDisplayName(event.target.value)}
@@ -115,27 +112,32 @@ function LoginForm({ onAuthSuccess }: LoginFormProps) {
         />
       </label>
 
-      {error && <p className="error-message">{error}</p>}
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
 
-      <div className="login-actions">
-        <button
-          type="button"
-          onClick={() => switchMode(isLogin ? "register" : "login")}
-          disabled={submitting}
-        >
-          {isLogin ? "Register" : "Use login"}
-        </button>
+      <button className="primary-button auth-submit" type="submit" disabled={!canSubmit}>
+        {submitting
+          ? isLogin
+            ? "Signing in..."
+            : "Creating account..."
+          : isLogin
+            ? "Sign in"
+            : "Create account"}
+      </button>
 
-        <button type="submit" disabled={!canSubmit}>
-          {submitting
-            ? isLogin
-              ? "Logging in..."
-              : "Registering..."
-            : isLogin
-              ? "Login"
-              : "Register"}
-        </button>
-      </div>
+      <button
+        className="text-button auth-mode-switch"
+        type="button"
+        onClick={() => switchMode(isLogin ? "register" : "login")}
+        disabled={submitting}
+      >
+        {isLogin
+          ? "New to CineNotes? Create your journal"
+          : "Already have an account? Sign in"}
+      </button>
     </form>
   );
 }
@@ -147,5 +149,3 @@ function getAuthErrorMessage(error: unknown) {
 
   return "Authentication failed. Please try again.";
 }
-
-export default LoginForm;

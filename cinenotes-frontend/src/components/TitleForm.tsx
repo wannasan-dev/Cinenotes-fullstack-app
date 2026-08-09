@@ -4,6 +4,7 @@ import {
   updateTitle,
   type TitleRequest,
 } from "../api/titleApi";
+import { ApiError } from "../api/apiClient";
 import { fetchAdminGenres } from "../api/adminGenreApi";
 import { fetchAdminMoodTags } from "../api/adminMoodTagApi";
 import type { GenreResponse, MoodTagResponse, Title, TitleType } from "../types/title";
@@ -106,8 +107,8 @@ export function TitleForm({
       }
 
       setFormData(initialFormData);
-    } catch {
-      setSubmitError("Could not save title. Please check the form.");
+    } catch (error) {
+      setSubmitError(getTitleFormErrorMessage(error));
     } finally {
       setSubmitting(false);
     }
@@ -378,4 +379,12 @@ function toNullableNumber(value: string) {
 
 function toStringValue(value: number | null) {
   return value === null ? "" : String(value);
+}
+
+function getTitleFormErrorMessage(error: unknown) {
+  if (error instanceof ApiError) {
+    return error.message;
+  }
+
+  return "Could not save title. Please check the form.";
 }

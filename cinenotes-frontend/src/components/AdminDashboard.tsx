@@ -655,9 +655,14 @@ function AdminReviewModerationPanel({ authToken }: { authToken: string }) {
   }, [authToken]);
 
   async function loadReviews(filter = visibilityFilter) {
-    const visible =
-      filter === "ALL" ? undefined : filter === "VISIBLE";
-    setReviews(await fetchAdminReviews(visible, authToken));
+    try {
+      const visible =
+        filter === "ALL" ? undefined : filter === "VISIBLE";
+      setReviews(await fetchAdminReviews(visible, authToken));
+      setError("");
+    } catch (error) {
+      setError(getAdminErrorMessage(error));
+    }
   }
 
   async function moderate(review: ReviewResponse) {

@@ -3,75 +3,50 @@ import { getPosterSrc } from "../utils/poster";
 
 type TitleCardProps = {
   title: Title;
-  onViewDetails: (title: Title) => void;
-  onEdit?: (title: Title) => void;
-  onDelete?: (title: Title) => void;
+  onOpenTitle: (title: Title) => void;
+  compact?: boolean;
 };
 
-export function TitleCard({
-  title,
-  onViewDetails,
-  onEdit,
-  onDelete,
-}: TitleCardProps) {
+export function TitleCard({ title, onOpenTitle, compact = false }: TitleCardProps) {
+  const year = getReleaseYear(title.releaseDate);
+  const typeLabel = title.type === "MOVIE" ? "Movie" : "Series";
+  const accessibleName = `${title.name}, ${year}, ${typeLabel}`;
+
   return (
-    <article className="title-card">
-      <div className="poster-wrapper">
-        <img src={getPosterSrc(title.posterPath)} alt={title.name} />
-        <span className="type-badge">{title.type}</span>
-      </div>
-
-      {(onEdit || onDelete) && (
-        <div className="card-admin-actions">
-          {onEdit && (
-            <button className="edit-button" onClick={() => onEdit(title)}>
-              Edit
-            </button>
-          )}
-
-          {onDelete && (
-            <button className="delete-button" onClick={() => onDelete(title)}>
-              Delete
-            </button>
-          )}
-        </div>
-      )}
-
-      <div className="title-card-content">
-        <div className="card-meta">
-          <span>{title.genres.map((genre) => genre.name).join(" / ") || "No genre"}</span>
-          <span>{getReleaseYear(title.releaseDate)}</span>
+    <article className={compact ? "title-card compact" : "title-card"}>
+      <button
+        className="title-card-button"
+        type="button"
+        aria-label={`Open ${accessibleName}`}
+        onClick={() => onOpenTitle(title)}
+      >
+        <div className="poster-wrapper">
+          <img src={getPosterSrc(title.posterPath)} alt="" />
+          <span className="type-badge">{typeLabel}</span>
         </div>
 
-        <h2>{title.name}</h2>
+        <div className="title-card-content">
+          <p className="card-year">{year}</p>
+          <h3>{title.name}</h3>
 
-        {title.tmdbVoteAverage !== null && (
-          <p className="rating">TMDb {title.tmdbVoteAverage.toFixed(1)}/10</p>
-        )}
+          {title.moodTags.length > 0 && (
+            <div className="card-moods" aria-label="Moods">
+              {title.moodTags.slice(0, 2).map((moodTag) => (
+                <span key={moodTag.id}>{moodTag.name}</span>
+              ))}
+            </div>
+          )}
 
-        <p className="description">{title.overview || "No overview yet."}</p>
-
-        {title.moodTags.length > 0 && (
-          <p className="mood-tags">
-            {title.moodTags.map((moodTag) => moodTag.name).join(" / ")}
-          </p>
-        )}
-
-        <button
-          className="review-button"
-          onClick={() => onViewDetails(title)}
-        >
-          View details
-        </button>
-      </div>
+          {title.tmdbVoteAverage !== null && (
+            <p className="card-rating">TMDb {title.tmdbVoteAverage.toFixed(1)}</p>
+          )}
+        </div>
+      </button>
     </article>
   );
 }
 
 function getReleaseYear(releaseDate: string | null) {
-  if (!releaseDate) {
-    return "TBA";
-  }
-
+  if (!releaseDate) return "TBA";
   return new Date(releaseDate).getFullYear();
 }

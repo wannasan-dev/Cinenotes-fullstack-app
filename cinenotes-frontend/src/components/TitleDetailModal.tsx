@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   createReview,
   deleteReview,
@@ -90,6 +90,8 @@ export function TitleDetailModal({
   onWatchDataChanged,
   onClose,
 }: TitleDetailModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [visibleReviews, setVisibleReviews] = useState<ReviewResponse[]>([]);
   const [currentUserReviews, setCurrentUserReviews] = useState<ReviewResponse[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(true);
@@ -118,6 +120,46 @@ export function TitleDetailModal({
     !visibleReviews.some((review) => review.id === ownReview.id)
       ? ownReview
       : null;
+
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeButtonRef.current?.focus();
+
+    function handleDialogKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+
+      if (event.key !== "Tab" || !dialogRef.current) return;
+      const focusable = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
+        )
+      );
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first || !last) return;
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener("keydown", handleDialogKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleDialogKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [onClose]);
 
   useEffect(() => {
     async function loadReviews() {
@@ -414,8 +456,16 @@ export function TitleDetailModal({
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="review-modal" onClick={(event) => event.stopPropagation()}>
+      <div
+        ref={dialogRef}
+        className="review-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={`title-detail-heading-${title.id}`}
+        onClick={(event) => event.stopPropagation()}
+      >
         <button
+          ref={closeButtonRef}
           className="modal-close-button"
           onClick={onClose}
           aria-label="Close title details"
@@ -427,7 +477,7 @@ export function TitleDetailModal({
           <img src={getPosterSrc(title.posterPath)} alt={title.name} />
           <div>
             <p className="eyebrow">{title.type}</p>
-            <h2>{title.name}</h2>
+            <h2 id={`title-detail-heading-${title.id}`}>{title.name}</h2>
             {title.originalName && title.originalName !== title.name && (
               <p className="modal-meta">{title.originalName}</p>
             )}
