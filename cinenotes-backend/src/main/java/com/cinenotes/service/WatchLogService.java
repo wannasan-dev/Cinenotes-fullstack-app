@@ -75,6 +75,7 @@ public class WatchLogService {
         ensureOwner(watchLog, currentUser);
 
         watchLogMoodRepository.deleteByWatchLogId(id);
+        watchLogMoodRepository.flush();
         watchLogRepository.delete(watchLog);
     }
 
@@ -127,10 +128,13 @@ public class WatchLogService {
     }
 
     private void replaceMoodTags(WatchLog watchLog, List<Long> moodTagIds) {
+        List<MoodTag> moodTags = findMoodTagsByIds(moodTagIds);
+
         watchLogMoodRepository.deleteByWatchLogId(watchLog.getId());
+        watchLogMoodRepository.flush();
         watchLog.getWatchLogMoods().clear();
 
-        for (MoodTag moodTag : findMoodTagsByIds(moodTagIds)) {
+        for (MoodTag moodTag : moodTags) {
             WatchLogMood watchLogMood = new WatchLogMood();
             watchLogMood.setWatchLog(watchLog);
             watchLogMood.setMoodTag(moodTag);

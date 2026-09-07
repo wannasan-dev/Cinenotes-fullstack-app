@@ -35,7 +35,7 @@ public class MoodTagService {
 
     @Transactional(readOnly = true)
     public List<MoodTagResponse> findAll() {
-        return moodTagRepository.findAll()
+        return moodTagRepository.findAllByOrderByNameAsc()
                 .stream()
                 .map(moodTagMapper::toResponse)
                 .toList();

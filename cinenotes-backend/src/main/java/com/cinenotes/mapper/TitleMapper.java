@@ -47,6 +47,8 @@ public class TitleMapper {
                 title.getCountry(),
                 title.getTmdbVoteAverage(),
                 title.getTmdbVoteCount(),
+                null,
+                0L,
                 title.getBackdropPath(),
                 toGenreResponses(title),
                 toMoodTagResponses(title),

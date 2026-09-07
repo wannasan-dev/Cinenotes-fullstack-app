@@ -51,6 +51,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/users/me").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/users/by-username/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users/{id}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/mood-tags").authenticated()
                         .requestMatchers("/api/watchlist/**").authenticated()
                         .requestMatchers("/api/watch-logs/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/reviews/**").authenticated()

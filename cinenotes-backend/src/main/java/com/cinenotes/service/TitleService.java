@@ -2,7 +2,10 @@ package com.cinenotes.service;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +28,7 @@ import com.cinenotes.repository.MoodTagRepository;
 import com.cinenotes.repository.ReviewRepository;
 import com.cinenotes.repository.TitleGenreRepository;
 import com.cinenotes.repository.TitleMoodTagRepository;
+import com.cinenotes.repository.TitleRatingAggregate;
 import com.cinenotes.repository.TitleRepository;
 import com.cinenotes.repository.WatchLogRepository;
 import com.cinenotes.repository.WatchlistItemRepository;
@@ -52,10 +56,7 @@ public class TitleService {
 
     @Transactional(readOnly = true)
     public List<TitleResponse> findAll() {
-        return titleRepository.findAll()
-                .stream()
-                .map(titleMapper::toResponse)
-                .toList();
+        return toResponses(titleRepository.findAll());
     }
 
     @Transactional(readOnly = true)
@@ -65,52 +66,37 @@ public class TitleService {
 
     @Transactional(readOnly = true)
     public List<TitleResponse> findAll(TitleType type, String genre, String moodTag, String keyword) {
-        return titleRepository.findAllWithFilters(
+        return toResponses(titleRepository.findAllWithFilters(
                         type,
                         normalize(genre),
                         normalize(moodTag),
                         normalize(keyword)
-                )
-                .stream()
-                .map(titleMapper::toResponse)
-                .toList();
+                ));
     }
 
     @Transactional(readOnly = true)
     public TitleResponse findById(Long id) {
-        return titleMapper.toResponse(getTitle(id));
+        return toResponse(getTitle(id));
     }
 
     @Transactional(readOnly = true)
     public List<TitleResponse> searchByName(String keyword) {
-        return titleRepository.findByNameContainingIgnoreCase(normalize(keyword))
-                .stream()
-                .map(titleMapper::toResponse)
-                .toList();
+        return toResponses(titleRepository.findByNameContainingIgnoreCase(normalize(keyword)));
     }
 
     @Transactional(readOnly = true)
     public List<TitleResponse> findByType(TitleType type) {
-        return titleRepository.findByType(type)
-                .stream()
-                .map(titleMapper::toResponse)
-                .toList();
+        return toResponses(titleRepository.findByType(type));
     }
 
     @Transactional(readOnly = true)
     public List<TitleResponse> findByGenre(String genreName) {
-        return titleRepository.findDistinctByTitleGenres_Genre_NameIgnoreCase(genreName)
-                .stream()
-                .map(titleMapper::toResponse)
-                .toList();
+        return toResponses(titleRepository.findDistinctByTitleGenres_Genre_NameIgnoreCase(genreName));
     }
 
     @Transactional(readOnly = true)
     public List<TitleResponse> findByMoodTag(String moodTagName) {
-        return titleRepository.findDistinctByTitleMoodTags_MoodTag_NameIgnoreCase(moodTagName)
-                .stream()
-                .map(titleMapper::toResponse)
-                .toList();
+        return toResponses(titleRepository.findDistinctByTitleMoodTags_MoodTag_NameIgnoreCase(moodTagName));
     }
 
     @Transactional
@@ -132,7 +118,7 @@ public class TitleService {
                 "Created title " + savedTitle.getName()
         );
 
-        return titleMapper.toResponse(savedTitle);
+        return toResponse(savedTitle);
     }
 
     @Transactional
@@ -155,7 +141,7 @@ public class TitleService {
                 "Updated title " + savedTitle.getName()
         );
 
-        return titleMapper.toResponse(savedTitle);
+        return toResponse(savedTitle);
     }
 
     @Transactional
@@ -186,6 +172,34 @@ public class TitleService {
                     "Title cannot be deleted because it has user-generated activity."
             );
         }
+    }
+
+    private TitleResponse toResponse(Title title) {
+        return toResponses(List.of(title)).get(0);
+    }
+
+    private List<TitleResponse> toResponses(List<Title> titles) {
+        if (titles.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> titleIds = titles.stream().map(Title::getId).toList();
+        Map<Long, TitleRatingAggregate> ratingsByTitleId = reviewRepository
+                .findVisibleRatingAggregatesByTitleIds(titleIds)
+                .stream()
+                .collect(Collectors.toMap(TitleRatingAggregate::getTitleId, Function.identity()));
+
+        return titles.stream()
+                .map(title -> {
+                    TitleResponse response = titleMapper.toResponse(title);
+                    TitleRatingAggregate aggregate = ratingsByTitleId.get(title.getId());
+                    if (aggregate != null) {
+                        response.setCinenotesRatingAverage(aggregate.getAverageRating());
+                        response.setCinenotesRatingCount(aggregate.getRatingCount());
+                    }
+                    return response;
+                })
+                .toList();
     }
 
     private Title getTitle(Long id) {

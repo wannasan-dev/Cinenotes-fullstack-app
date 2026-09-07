@@ -43,6 +43,10 @@ public class TitleResponse {
 
     private Integer tmdbVoteCount;
 
+    private Double cinenotesRatingAverage;
+
+    private Long cinenotesRatingCount;
+
     private String backdropPath;
 
     private List<GenreResponse> genres;
