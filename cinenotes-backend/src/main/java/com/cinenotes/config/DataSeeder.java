@@ -3,6 +3,7 @@ package com.cinenotes.config;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.cinenotes.domain.Genre;
@@ -15,6 +16,7 @@ import com.cinenotes.user.AppUserRepository;
 
 
 @Configuration
+@Profile("local")
 public class DataSeeder {
 
     @Bean
