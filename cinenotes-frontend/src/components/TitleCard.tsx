@@ -22,12 +22,11 @@ export function TitleCard({ title, onOpenTitle, compact = false }: TitleCardProp
       >
         <div className="poster-wrapper">
           <img src={getPosterSrc(title.posterPath)} alt="" />
-          <span className="type-badge">{typeLabel}</span>
         </div>
 
         <div className="title-card-content">
-          <p className="card-year">{year}</p>
           <h3>{title.name}</h3>
+          <p className="card-year">{year} <span aria-hidden="true">·</span> {typeLabel}</p>
 
           {title.moodTags.length > 0 && (
             <div className="card-moods" aria-label="Moods">

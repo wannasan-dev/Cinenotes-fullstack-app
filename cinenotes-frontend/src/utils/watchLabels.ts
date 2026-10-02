@@ -1,4 +1,5 @@
 import type { WatchCompany, WatchPlace } from "../types/watchLog";
+import type { TitleType } from "../types/title";
 import type { WatchStatus } from "../types/watchlist";
 
 export const WATCH_STATUSES: WatchStatus[] = [
@@ -7,6 +8,21 @@ export const WATCH_STATUSES: WatchStatus[] = [
   "WATCHED",
   "DROPPED",
 ];
+
+const MOVIE_WATCH_STATUSES: WatchStatus[] = [
+  "WANT_TO_WATCH",
+  "WATCHED",
+  "DROPPED",
+];
+
+export function getWatchStatusesForTitle(
+  titleType: TitleType,
+  currentStatus?: WatchStatus
+): WatchStatus[] {
+  if (titleType === "SERIES") return WATCH_STATUSES;
+  if (currentStatus === "WATCHING") return ["WATCHING", ...MOVIE_WATCH_STATUSES];
+  return MOVIE_WATCH_STATUSES;
+}
 
 export const WATCH_PLACES: WatchPlace[] = [
   "HOME",

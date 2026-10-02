@@ -25,6 +25,11 @@ import {
   restoreAdminReview,
 } from "../api/adminReviewApi";
 import { fetchAuditLogs, fetchAuditLogsByActor } from "../api/auditLogApi";
+import {
+  importPopularTmdbTitles,
+  importTmdbTitle,
+  searchTmdbTitles,
+} from "../api/tmdbApi";
 import { TitleForm } from "./TitleForm";
 import type {
   AuditLogResponse,
@@ -34,7 +39,9 @@ import type {
 } from "../types/admin";
 import type { UserRole } from "../types/auth";
 import type { ReviewResponse } from "../types/review";
-import type { GenreResponse, MoodTagResponse, Title } from "../types/title";
+import type { GenreResponse, MoodTagResponse, Title, TitleType } from "../types/title";
+import type { TmdbTitleSearchResult } from "../types/tmdb";
+import { getPosterSrc } from "../utils/poster";
 
 type AdminTab =
   | "titles"
@@ -47,8 +54,8 @@ type AdminTab =
 type AdminDashboardProps = {
   authToken: string;
   titles: Title[];
-  onTitleCreated: (title: Title) => void;
-  onTitleUpdated: (title: Title) => void;
+  onTitleCreated: (title?: Title) => void;
+  onTitleUpdated: (title?: Title) => void;
   onTitleDeleted: (titleId: number) => void;
 };
 
@@ -121,6 +128,13 @@ function AdminTitlePanel({
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTitle, setEditingTitle] = useState<Title | null>(null);
   const [error, setError] = useState("");
+  const [tmdbQuery, setTmdbQuery] = useState("");
+  const [tmdbType, setTmdbType] = useState<TitleType>("MOVIE");
+  const [tmdbResults, setTmdbResults] = useState<TmdbTitleSearchResult[]>([]);
+  const [tmdbLoading, setTmdbLoading] = useState(false);
+  const [tmdbImportingId, setTmdbImportingId] = useState<number | null>(null);
+  const [tmdbMessage, setTmdbMessage] = useState("");
+  const [popularImporting, setPopularImporting] = useState(false);
 
   async function handleDeleteTitle(title: Title) {
     const shouldDelete = window.confirm(`Delete "${title.name}" from CineNotes?`);
@@ -132,6 +146,84 @@ function AdminTitlePanel({
       onTitleDeleted(title.id);
     } catch (error) {
       setError(getAdminErrorMessage(error));
+    }
+  }
+
+  async function handleTmdbSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const query = tmdbQuery.trim();
+    if (!query) {
+      setError("Enter a TMDb search term.");
+      return;
+    }
+
+    try {
+      setTmdbLoading(true);
+      setError("");
+      setTmdbMessage("");
+      const response = await searchTmdbTitles(tmdbType, query, 1, authToken);
+      setTmdbResults(response.results);
+      setTmdbMessage(
+        response.totalResults === 0
+          ? "No TMDb results found."
+          : `${response.totalResults} TMDb result${
+              response.totalResults === 1 ? "" : "s"
+            } found.`
+      );
+    } catch (error) {
+      setTmdbResults([]);
+      setError(getAdminErrorMessage(error));
+    } finally {
+      setTmdbLoading(false);
+    }
+  }
+
+  async function handleTmdbImport(result: TmdbTitleSearchResult) {
+    try {
+      setTmdbImportingId(result.tmdbId);
+      setError("");
+      setTmdbMessage("");
+      const importedTitle = await importTmdbTitle(result.type, result.tmdbId, authToken);
+      onTitleCreated(importedTitle);
+      setTmdbResults((currentResults) =>
+        currentResults.map((currentResult) =>
+          currentResult.type === result.type && currentResult.tmdbId === result.tmdbId
+            ? { ...currentResult, alreadyImported: true }
+            : currentResult
+        )
+      );
+      setTmdbMessage(`Imported "${importedTitle.name}" from TMDb.`);
+    } catch (error) {
+      setError(getAdminErrorMessage(error));
+    } finally {
+      setTmdbImportingId(null);
+    }
+  }
+
+  async function handlePopularImport() {
+    const shouldImport = window.confirm(
+      "Import popular TMDb movies and series into CineNotes?"
+    );
+    if (!shouldImport) return;
+
+    try {
+      setPopularImporting(true);
+      setError("");
+      setTmdbMessage("");
+      const summary = await importPopularTmdbTitles(2, 1, authToken);
+      setTmdbMessage(
+        `Popular import complete: ${summary.imported} imported, ${summary.skipped} skipped, ${summary.failed} failed.`
+      );
+      if (summary.imported > 0) {
+        onTitleCreated();
+      }
+      if (summary.failureMessages.length > 0) {
+        setError(summary.failureMessages.slice(0, 3).join(" "));
+      }
+    } catch (error) {
+      setError(getAdminErrorMessage(error));
+    } finally {
+      setPopularImporting(false);
     }
   }
 
@@ -157,6 +249,80 @@ function AdminTitlePanel({
       </div>
 
       {error && <p className="form-error">{error}</p>}
+      {tmdbMessage && <p className="form-success">{tmdbMessage}</p>}
+
+      <div className="tmdb-import-panel">
+        <div className="admin-section-header">
+          <div>
+            <h3>Import from TMDb</h3>
+            <p>Search TMDb metadata and import one title at a time.</p>
+          </div>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={handlePopularImport}
+            disabled={popularImporting}
+          >
+            {popularImporting ? "Importing..." : "Import popular"}
+          </button>
+        </div>
+
+        <form className="tmdb-search-form" onSubmit={handleTmdbSearch}>
+          <select
+            value={tmdbType}
+            onChange={(event) => setTmdbType(event.target.value as TitleType)}
+          >
+            <option value="MOVIE">Movie</option>
+            <option value="SERIES">Series</option>
+          </select>
+          <input
+            value={tmdbQuery}
+            onChange={(event) => setTmdbQuery(event.target.value)}
+            placeholder="Search title metadata"
+          />
+          <button type="submit" disabled={tmdbLoading}>
+            {tmdbLoading ? "Searching..." : "Search TMDb"}
+          </button>
+        </form>
+
+        {tmdbResults.length > 0 && (
+          <div className="tmdb-result-list">
+            {tmdbResults.map((result) => (
+              <div
+                key={`${result.type}-${result.tmdbId}`}
+                className="tmdb-result-row"
+              >
+                <img
+                  src={getPosterSrc(result.posterPath)}
+                  alt=""
+                  className="tmdb-result-poster"
+                />
+                <div>
+                  <strong>{result.name}</strong>
+                  <p>
+                    {result.type} | TMDb {result.tmdbId} |{" "}
+                    {result.releaseDate ?? "date TBA"}
+                  </p>
+                  {result.overview && <p>{result.overview}</p>}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleTmdbImport(result)}
+                  disabled={
+                    result.alreadyImported || tmdbImportingId === result.tmdbId
+                  }
+                >
+                  {result.alreadyImported
+                    ? "Imported"
+                    : tmdbImportingId === result.tmdbId
+                      ? "Importing..."
+                      : "Import"}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {isFormOpen && (
         <TitleForm

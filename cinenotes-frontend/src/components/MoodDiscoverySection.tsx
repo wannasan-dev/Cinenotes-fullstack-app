@@ -34,15 +34,19 @@ export function MoodDiscoverySection({
   onRetry,
 }: MoodDiscoverySectionProps) {
   const visibleMoods = getVisibleMoods(moods);
+  const latestTitles = [...titles]
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
+    .slice(0, 6);
   const matchingTitles = selectedMood
-    ? [...titles]
-        .filter((title) => title.moodTags.some((mood) => mood.name === selectedMood))
-        .sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    ? latestTitlesFrom(
+        titles.filter((title) =>
+          title.moodTags.some((mood) => mood.name === selectedMood)
         )
-        .slice(0, 6)
-    : [];
+      )
+    : latestTitles;
 
   return (
     <section
@@ -79,9 +83,7 @@ export function MoodDiscoverySection({
             Try again
           </button>
         </div>
-      ) : !selectedMood ? (
-        <p className="mood-instruction">Choose a mood to see matching titles.</p>
-      ) : matchingTitles.length === 0 ? (
+      ) : selectedMood && matchingTitles.length === 0 ? (
         <div className="inline-status">
           <h3>No titles are currently tagged “{selectedMood}.”</h3>
           <button className="secondary-button" type="button" onClick={() => onSelectedMoodChange(null)}>
@@ -91,10 +93,15 @@ export function MoodDiscoverySection({
       ) : (
         <div className="mood-results">
           <div className="mood-results-heading">
-            <h3>Titles tagged “{selectedMood}”</h3>
-            <button className="text-button" type="button" onClick={() => onViewAll(selectedMood)}>
-              View all matching titles
-            </button>
+            <div>
+              <h3>{selectedMood ? `Titles tagged “${selectedMood}”` : "Recently added to CineNotes"}</h3>
+              {!selectedMood && <p>Choose a mood above to narrow this shelf by feeling.</p>}
+            </div>
+            {selectedMood && (
+              <button className="text-button" type="button" onClick={() => onViewAll(selectedMood)}>
+                View all matching titles
+              </button>
+            )}
           </div>
           <div className="mood-shelf">
             {matchingTitles.map((title) => (
@@ -105,6 +112,15 @@ export function MoodDiscoverySection({
       )}
     </section>
   );
+}
+
+function latestTitlesFrom(titles: Title[]) {
+  return [...titles]
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
+    .slice(0, 6);
 }
 
 type MoodSelectorProps = {

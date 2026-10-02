@@ -31,7 +31,9 @@ export function HowCineNotesWorks({ sectionRef }: HowCineNotesWorksProps) {
       <ol className="journey-stages">
         {STAGES.map((stage, index) => (
           <li key={stage.name} className={stage.name === "Remember" ? "featured" : ""}>
-            <span className="stage-number">{String(index + 1).padStart(2, "0")}</span>
+            <span className="stage-marker" aria-hidden="true">
+              <span className="stage-number">{String(index + 1).padStart(2, "0")}</span>
+            </span>
             <h3>{stage.name}</h3>
             <p>{stage.copy}</p>
           </li>
@@ -98,6 +100,7 @@ export function SiteFooter({
             <>
               <button type="button" onClick={() => onOpenWorkspace("journal")}>Journal</button>
               <button type="button" onClick={() => onOpenWorkspace("watchlist")}>Watchlist</button>
+              <button type="button" onClick={() => onOpenWorkspace("favorites")}>Favorites</button>
               <button type="button" onClick={() => onOpenWorkspace("profile")}>Account</button>
             </>
           ) : (

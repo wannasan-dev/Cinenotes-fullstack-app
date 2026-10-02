@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { AuthState } from "../types/auth";
 import type { AuthMode } from "./LoginForm";
+import { ChevronDownIcon, MenuIcon } from "./UiIcons";
 
-export type Workspace = "journal" | "watchlist" | "profile" | "admin" | null;
+export type Workspace = "journal" | "watchlist" | "favorites" | "profile" | "admin" | null;
 
 type GlobalHeaderProps = {
   authState: AuthState | null;
@@ -91,7 +92,7 @@ export function GlobalHeader({
           aria-controls="primary-navigation"
           onClick={() => setMobileMenuOpen((open) => !open)}
         >
-          <span aria-hidden="true">☰</span>
+          <MenuIcon size={21} />
           <span className="sr-only">Menu</span>
         </button>
 
@@ -100,7 +101,12 @@ export function GlobalHeader({
           className={mobileMenuOpen ? "primary-navigation open" : "primary-navigation"}
           aria-label="Primary navigation"
         >
-          <button className="nav-link" type="button" onClick={() => navigate("catalog")}>
+          <button
+            className={authState && activeWorkspace === null ? "nav-link active" : "nav-link"}
+            type="button"
+            aria-current={authState && activeWorkspace === null ? "page" : undefined}
+            onClick={() => navigate("catalog")}
+          >
             Discover
           </button>
 
@@ -122,6 +128,14 @@ export function GlobalHeader({
               >
                 Watchlist
               </button>
+              <button
+                className={activeWorkspace === "favorites" ? "nav-link active" : "nav-link"}
+                type="button"
+                aria-current={activeWorkspace === "favorites" ? "page" : undefined}
+                onClick={() => openWorkspace("favorites")}
+              >
+                Favorites
+              </button>
 
               <div className="account-menu" ref={accountMenuRef}>
                 <button
@@ -132,8 +146,8 @@ export function GlobalHeader({
                   aria-haspopup="menu"
                   onClick={() => setAccountMenuOpen((open) => !open)}
                 >
-                  {authState.user.displayName || authState.user.username}
-                  <span aria-hidden="true">⌄</span>
+                  Account
+                  <ChevronDownIcon size={16} />
                 </button>
 
                 {accountMenuOpen && (

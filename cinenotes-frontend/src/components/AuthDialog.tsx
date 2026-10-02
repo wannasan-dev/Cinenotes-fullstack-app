@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { AuthResponse } from "../types/auth";
 import { AuthForm, type AuthMode } from "./LoginForm";
+import { CloseIcon } from "./UiIcons";
 
 type AuthDialogProps = {
   mode: AuthMode;
@@ -72,7 +73,7 @@ export function AuthDialog({
           onClick={onClose}
           aria-label="Close authentication dialog"
         >
-          ×
+          <CloseIcon size={20} />
         </button>
 
         <p className="eyebrow">CineNotes account</p>

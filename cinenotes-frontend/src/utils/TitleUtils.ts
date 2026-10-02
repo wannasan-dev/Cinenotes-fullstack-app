@@ -5,6 +5,8 @@ type FilterAndSortOptions = {
   searchText: string;
   selectedGenre: string;
   selectedMood: string;
+  selectedCountry: string;
+  selectedReleaseYear: string;
   sortOption: string;
 }; 
 
@@ -12,7 +14,15 @@ export function filterAndSortTitles(
   titles: Title[],
   options: FilterAndSortOptions
 ): Title[] {
-  const { selectedType, searchText, selectedGenre, selectedMood, sortOption } = options;
+  const {
+    selectedType,
+    searchText,
+    selectedGenre,
+    selectedMood,
+    selectedCountry,
+    selectedReleaseYear,
+    sortOption,
+  } = options;
 
   const filteredTitles = titles.filter((title) => {
     const matchesType =
@@ -29,7 +39,15 @@ export function filterAndSortTitles(
       selectedMood === "ALL" ||
       title.moodTags.some((moodTag) => moodTag.name === selectedMood);
 
-    return matchesType && matchesSearch && matchesGenre && matchesMood;
+    const matchesCountry =
+      selectedCountry === "ALL" || title.country === selectedCountry;
+
+    const matchesReleaseYear =
+      selectedReleaseYear === "ALL" ||
+      title.releaseDate?.slice(0, 4) === selectedReleaseYear;
+
+    return matchesType && matchesSearch && matchesGenre && matchesMood &&
+      matchesCountry && matchesReleaseYear;
   });
 
   const sortedTitles = [...filteredTitles];
@@ -49,6 +67,13 @@ export function filterAndSortTitles(
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
+  } else if (sortOption === "CINENOTES_RATING") {
+    sortedTitles.sort((a, b) =>
+      (b.cinenotesRatingAverage ?? -1) - (a.cinenotesRatingAverage ?? -1) ||
+      b.cinenotesRatingCount - a.cinenotesRatingCount
+    );
+  } else if (sortOption === "TITLE") {
+    sortedTitles.sort((a, b) => a.name.localeCompare(b.name));
   }
 
   return sortedTitles;

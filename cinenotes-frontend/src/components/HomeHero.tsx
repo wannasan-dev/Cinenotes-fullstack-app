@@ -1,3 +1,6 @@
+import { getPosterSrc } from "../utils/poster";
+import { CalendarIcon, HomeIcon, RepeatIcon, UsersIcon } from "./UiIcons";
+
 type HomeHeroProps = {
   isAuthenticated: boolean;
   onPrimaryAction: () => void;
@@ -39,22 +42,39 @@ export function HomeHero({
 export function ExampleWatchMemoryCard() {
   return (
     <article className="example-memory-card" aria-label="Example watch memory for Interstellar">
-      <p className="example-label">Example watch memory</p>
-      <div className="memory-card-heading">
-        <div>
-          <p className="memory-kicker">Watched May 18, 2026</p>
+      <div className="memory-poster">
+        <img
+          src={getPosterSrc("/posters/interstellar.png")}
+          alt="Interstellar poster"
+        />
+      </div>
+
+      <div className="memory-entry-heading">
+        <p className="example-label">Example watch memory</p>
+        <div className="memory-movie-identity">
+          <p className="memory-kicker">Movie</p>
           <h2>Interstellar</h2>
         </div>
-        <span className="memory-rewatch">Rewatch</span>
       </div>
-      <p className="memory-context">At home · With family · Rewatch</p>
+
+      <div className="memory-context" aria-label="Viewing context">
+        <span><CalendarIcon />Watched May 18, 2026</span>
+        <span><HomeIcon />At home</span>
+        <span><UsersIcon />With family</span>
+        <span><RepeatIcon />Rewatch</span>
+      </div>
+
       <div className="memory-moods" aria-label="Moods">
         <span>Emotional</span>
         <span>Mind-bending</span>
       </div>
-      <blockquote>
-        The second viewing felt quieter—more about time, family, and the moments we cannot get back.
-      </blockquote>
+
+      <div className="memory-note">
+        <p>Memory</p>
+        <blockquote>
+          The second viewing felt quieter—more about time, family, and the moments we cannot get back.
+        </blockquote>
+      </div>
     </article>
   );
 }

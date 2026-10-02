@@ -27,6 +27,8 @@ export type Title = {
   country: string | null;
   tmdbVoteAverage: number | null;
   tmdbVoteCount: number | null;
+  cinenotesRatingAverage: number | null;
+  cinenotesRatingCount: number;
   genres: GenreResponse[];
   moodTags: MoodTagResponse[];
   createdAt: string;
