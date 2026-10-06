@@ -220,10 +220,13 @@ public class TitleService {
     }
 
     private void replaceGenres(Title title, List<Long> genreIds) {
+        List<Genre> genres = findGenresByIds(genreIds);
+
         titleGenreRepository.deleteByTitleId(title.getId());
+        titleGenreRepository.flush();
         title.getTitleGenres().clear();
 
-        for (Genre genre : findGenresByIds(genreIds)) {
+        for (Genre genre : genres) {
             TitleGenre titleGenre = new TitleGenre();
             titleGenre.setTitle(title);
             titleGenre.setGenre(genre);
@@ -232,10 +235,13 @@ public class TitleService {
     }
 
     private void replaceMoodTags(Title title, List<Long> moodTagIds) {
+        List<MoodTag> moodTags = findMoodTagsByIds(moodTagIds);
+
         titleMoodTagRepository.deleteByTitleId(title.getId());
+        titleMoodTagRepository.flush();
         title.getTitleMoodTags().clear();
 
-        for (MoodTag moodTag : findMoodTagsByIds(moodTagIds)) {
+        for (MoodTag moodTag : moodTags) {
             TitleMoodTag titleMoodTag = new TitleMoodTag();
             titleMoodTag.setTitle(title);
             titleMoodTag.setMoodTag(moodTag);
